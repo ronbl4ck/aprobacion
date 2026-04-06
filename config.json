@@ -3,19 +3,19 @@
     "engineer_name": "Luis Navarrete ",
     "cip_number": "72391902",
     "cover_coords": [
-        450.0,
-        692.0
+        77.0,
+        659.0
     ],
     "body_coords": [
-        338.0,
-        599.0
+        458.0,
+        667.0
     ],
     "cover_page": 1,
     "body_page_start": 2,
     "body_page_end": "",
     "start_date": "06/04/2026",
     "template_path": "C:\\Users\\P723919021\\Documents\\vscode\\APROBACION\\assets/plantilla_caratula.png",
-    "cover_scale": 100,
+    "cover_scale": 54,
     "body_scale": 100,
     "tpl_date1_coords": null,
     "tpl_date2_coords": null,
