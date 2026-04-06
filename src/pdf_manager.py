@@ -1,5 +1,6 @@
 import fitz
 import io
+import os
 from PIL import Image
 
 class PDFManager:
