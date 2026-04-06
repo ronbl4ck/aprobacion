@@ -1,0 +1,435 @@
+  0           RESUME                   0
+
+  1           LOAD_CONST               0 (0)
+              LOAD_CONST               1 (None)
+              IMPORT_NAME              0 (os)
+              STORE_NAME               0 (os)
+
+  2           LOAD_CONST               0 (0)
+              LOAD_CONST               2 (('DocxTemplate',))
+              IMPORT_NAME              1 (docxtpl)
+              IMPORT_FROM              2 (DocxTemplate)
+              STORE_NAME               2 (DocxTemplate)
+              POP_TOP
+
+  4           LOAD_BUILD_CLASS
+              PUSH_NULL
+              LOAD_CONST               3 (<code object WordEngine at 0x000001FC0A730B70, file "src\word_engine.py", line 4>)
+              MAKE_FUNCTION
+              LOAD_CONST               4 ('WordEngine')
+              CALL                     2
+              STORE_NAME               3 (WordEngine)
+              RETURN_CONST             1 (None)
+
+Disassembly of <code object WordEngine at 0x000001FC0A730B70, file "src\word_engine.py", line 4>:
+  4           RESUME                   0
+              LOAD_NAME                0 (__name__)
+              STORE_NAME               1 (__module__)
+              LOAD_CONST               0 ('WordEngine')
+              STORE_NAME               2 (__qualname__)
+              LOAD_CONST               1 (4)
+              STORE_NAME               3 (__firstlineno__)
+
+  5           LOAD_CONST               2 (<code object __init__ at 0x000001FC0A734B90, file "src\word_engine.py", line 5>)
+              MAKE_FUNCTION
+              STORE_NAME               4 (__init__)
+
+  9           LOAD_CONST               3 ('variables')
+              LOAD_NAME                5 (dict)
+              BUILD_TUPLE              2
+              LOAD_CONST               4 (<code object procesar_reglas_gramaticales at 0x000001FC0A7C81F0, file "src\word_engine.py", line 9>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE   4 (annotations)
+              STORE_NAME               6 (procesar_reglas_gramaticales)
+
+ 57           LOAD_CONST               5 ('template_path')
+              LOAD_NAME                7 (str)
+              LOAD_CONST               6 ('output_path')
+              LOAD_NAME                7 (str)
+              LOAD_CONST               7 ('context_vars')
+              LOAD_NAME                5 (dict)
+              LOAD_CONST               8 ('return')
+              LOAD_NAME                8 (tuple)
+              LOAD_NAME                9 (bool)
+              LOAD_NAME                7 (str)
+              BUILD_TUPLE              2
+              BINARY_SUBSCR
+              BUILD_TUPLE              8
+              LOAD_CONST               9 (<code object generar_documento at 0x000001FC0A5BA630, file "src\word_engine.py", line 57>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE   4 (annotations)
+              STORE_NAME              10 (generar_documento)
+              LOAD_CONST              10 (())
+              STORE_NAME              11 (__static_attributes__)
+              RETURN_CONST            11 (None)
+
+Disassembly of <code object __init__ at 0x000001FC0A734B90, file "src\word_engine.py", line 5>:
+  5           RESUME                   0
+
+  7           RETURN_CONST             0 (None)
+
+Disassembly of <code object procesar_reglas_gramaticales at 0x000001FC0A7C81F0, file "src\word_engine.py", line 9>:
+  9            RESUME                   0
+
+ 13            LOAD_CONST               1 (<code object format_larga at 0x000001FC0A761DE0, file "src\word_engine.py", line 13>)
+               MAKE_FUNCTION
+               STORE_FAST               2 (format_larga)
+
+ 24            LOAD_CONST               2 ('FECHA_HOY_CORTA')
+               LOAD_FAST                1 (variables)
+               CONTAINS_OP              0
+               POP_JUMP_IF_FALSE       14 (to L1)
+
+ 25            LOAD_FAST                2 (format_larga)
+               PUSH_NULL
+               LOAD_FAST                1 (variables)
+               LOAD_CONST               2 ('FECHA_HOY_CORTA')
+               BINARY_SUBSCR
+               CALL                     1
+               LOAD_FAST                1 (variables)
+               LOAD_CONST               3 ('FECHA_HOY_LARGA')
+               STORE_SUBSCR
+
+ 27    L1:     LOAD_CONST               4 (('FECHA_CARTA', 'FECHA_INICIO', 'FECHA_FIN_CALCULADA'))
+               GET_ITER
+       L2:     FOR_ITER                22 (to L4)
+               STORE_FAST               3 (key)
+
+ 28            LOAD_FAST_LOAD_FAST     49 (key, variables)
+               CONTAINS_OP              0
+               POP_JUMP_IF_TRUE         2 (to L3)
+               JUMP_BACKWARD           10 (to L2)
+
+ 29    L3:     LOAD_FAST                2 (format_larga)
+               PUSH_NULL
+               LOAD_FAST_LOAD_FAST     19 (variables, key)
+               BINARY_SUBSCR
+               CALL                     1
+               LOAD_FAST_LOAD_FAST     19 (variables, key)
+               STORE_SUBSCR
+               JUMP_BACKWARD           24 (to L2)
+
+ 27    L4:     END_FOR
+               POP_TOP
+
+ 32            LOAD_GLOBAL              1 (str + NULL)
+               LOAD_FAST                1 (variables)
+               LOAD_ATTR                3 (get + NULL|self)
+               LOAD_CONST               5 ('DISTRITO')
+               LOAD_CONST               6 ('')
+               CALL                     2
+               CALL                     1
+               LOAD_ATTR                5 (strip + NULL|self)
+               CALL                     0
+               STORE_FAST               4 (distrito)
+
+ 33            LOAD_FAST                4 (distrito)
+               LOAD_ATTR                7 (lower + NULL|self)
+               CALL                     0
+               LOAD_CONST               7 ('callao')
+               COMPARE_OP              88 (bool(==))
+               POP_JUMP_IF_TRUE        20 (to L5)
+               LOAD_FAST                4 (distrito)
+               LOAD_ATTR                7 (lower + NULL|self)
+               CALL                     0
+               LOAD_CONST               8 ('provincia constitucional del callao')
+               COMPARE_OP              88 (bool(==))
+               POP_JUMP_IF_FALSE        6 (to L6)
+
+ 34    L5:     LOAD_CONST               9 ('del Callao')
+               LOAD_FAST                1 (variables)
+               LOAD_CONST              10 ('DE_DISTRITO')
+               STORE_SUBSCR
+               JUMP_FORWARD             8 (to L7)
+
+ 36    L6:     LOAD_CONST              11 ('de ')
+               LOAD_FAST                4 (distrito)
+               FORMAT_SIMPLE
+               BUILD_STRING             2
+               LOAD_FAST                1 (variables)
+               LOAD_CONST              10 ('DE_DISTRITO')
+               STORE_SUBSCR
+
+ 39    L7:     LOAD_FAST                1 (variables)
+               LOAD_ATTR                3 (get + NULL|self)
+               LOAD_CONST              12 ('LISTA_PLANOS')
+               BUILD_LIST               0
+               CALL                     2
+               STORE_FAST               5 (planos_lista)
+
+ 40            LOAD_FAST                5 (planos_lista)
+               TO_BOOL
+               POP_JUMP_IF_TRUE         7 (to L8)
+
+ 41            LOAD_CONST              13 ('ninguno')
+               LOAD_FAST                1 (variables)
+               LOAD_CONST              14 ('STRING_PLANOS')
+               STORE_SUBSCR
+
+ 55            LOAD_FAST                1 (variables)
+               RETURN_VALUE
+
+ 42    L8:     LOAD_GLOBAL              9 (len + NULL)
+               LOAD_FAST                5 (planos_lista)
+               CALL                     1
+               LOAD_CONST              15 (1)
+               COMPARE_OP              88 (bool(==))
+               POP_JUMP_IF_FALSE       10 (to L9)
+
+ 43            LOAD_FAST                5 (planos_lista)
+               LOAD_CONST              16 (0)
+               BINARY_SUBSCR
+               LOAD_FAST                1 (variables)
+               LOAD_CONST              14 ('STRING_PLANOS')
+               STORE_SUBSCR
+
+ 55            LOAD_FAST                1 (variables)
+               RETURN_VALUE
+
+ 45    L9:     LOAD_GLOBAL              1 (str + NULL)
+               LOAD_FAST                5 (planos_lista)
+               LOAD_CONST              17 (-1)
+               BINARY_SUBSCR
+               CALL                     1
+               LOAD_ATTR                5 (strip + NULL|self)
+               CALL                     0
+               STORE_FAST               6 (ult_plano)
+
+ 47            LOAD_FAST                6 (ult_plano)
+               LOAD_ATTR                7 (lower + NULL|self)
+               CALL                     0
+               LOAD_ATTR               11 (startswith + NULL|self)
+               LOAD_CONST              18 ('i')
+               CALL                     1
+               TO_BOOL
+               POP_JUMP_IF_TRUE        36 (to L10)
+               LOAD_FAST                6 (ult_plano)
+               LOAD_ATTR                7 (lower + NULL|self)
+               CALL                     0
+               LOAD_ATTR               11 (startswith + NULL|self)
+               LOAD_CONST              19 ('hi')
+               CALL                     1
+               TO_BOOL
+               POP_JUMP_IF_FALSE        3 (to L11)
+
+ 48   L10:     LOAD_CONST              20 (' e ')
+               STORE_FAST               7 (conector)
+               JUMP_FORWARD             2 (to L12)
+
+ 50   L11:     LOAD_CONST              21 (' y ')
+               STORE_FAST               7 (conector)
+
+ 52   L12:     LOAD_CONST              22 (', ')
+               LOAD_ATTR               13 (join + NULL|self)
+               LOAD_FAST                5 (planos_lista)
+               LOAD_CONST              23 (None)
+               LOAD_CONST              17 (-1)
+               BINARY_SLICE
+               CALL                     1
+               LOAD_FAST                7 (conector)
+               BINARY_OP                0 (+)
+               LOAD_FAST                6 (ult_plano)
+               BINARY_OP                0 (+)
+               STORE_FAST               8 (str_planos)
+
+ 53            LOAD_FAST_LOAD_FAST    129 (str_planos, variables)
+               LOAD_CONST              14 ('STRING_PLANOS')
+               STORE_SUBSCR
+
+ 55            LOAD_FAST                1 (variables)
+               RETURN_VALUE
+
+Disassembly of <code object format_larga at 0x000001FC0A761DE0, file "src\word_engine.py", line 13>:
+  13           RESUME                   0
+
+  14           LOAD_GLOBAL              1 (str + NULL)
+               LOAD_FAST                0 (fecha_str)
+               CALL                     1
+               LOAD_ATTR                3 (strip + NULL|self)
+               CALL                     0
+               STORE_FAST               0 (fecha_str)
+
+  15           BUILD_LIST               0
+               LOAD_CONST               1 (('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'))
+               LIST_EXTEND              1
+               STORE_FAST               1 (meses)
+
+  16           NOP
+
+  17   L1:     LOAD_CONST               2 ('/')
+               LOAD_FAST                0 (fecha_str)
+               CONTAINS_OP              0
+               POP_JUMP_IF_FALSE       45 (to L3)
+
+  18           LOAD_FAST                0 (fecha_str)
+               LOAD_ATTR                5 (split + NULL|self)
+               LOAD_CONST               2 ('/')
+               CALL                     1
+               UNPACK_SEQUENCE          3
+               STORE_FAST_STORE_FAST   35 (pd, pm)
+               STORE_FAST               4 (py)
+
+  19           LOAD_FAST                2 (pd)
+               FORMAT_SIMPLE
+               LOAD_CONST               3 (' de ')
+               LOAD_FAST                1 (meses)
+               LOAD_GLOBAL              7 (int + NULL)
+               LOAD_FAST                3 (pm)
+               CALL                     1
+               LOAD_CONST               4 (1)
+               BINARY_OP               10 (-)
+               BINARY_SUBSCR
+               FORMAT_SIMPLE
+               LOAD_CONST               3 (' de ')
+               LOAD_FAST                4 (py)
+               FORMAT_SIMPLE
+               BUILD_STRING             5
+       L2:     RETURN_VALUE
+
+  17   L3:     NOP
+
+  21           LOAD_FAST                0 (fecha_str)
+               RETURN_VALUE
+
+  --   L4:     PUSH_EXC_INFO
+
+  20           POP_TOP
+       L5:     POP_EXCEPT
+
+  21           LOAD_FAST                0 (fecha_str)
+               RETURN_VALUE
+
+  --   L6:     COPY                     3
+               POP_EXCEPT
+               RERAISE                  1
+ExceptionTable:
+  L1 to L2 -> L4 [0]
+  L4 to L5 -> L6 [1] lasti
+
+Disassembly of <code object generar_documento at 0x000001FC0A5BA630, file "src\word_engine.py", line 57>:
+  57            RESUME                   0
+
+  61            LOAD_GLOBAL              0 (os)
+                LOAD_ATTR                2 (path)
+                LOAD_ATTR                5 (exists + NULL|self)
+                LOAD_FAST                1 (template_path)
+                CALL                     1
+                TO_BOOL
+                POP_JUMP_IF_TRUE         8 (to L1)
+
+  62            LOAD_CONST               1 (False)
+                LOAD_CONST               2 ("La plantilla '")
+                LOAD_FAST                1 (template_path)
+                FORMAT_SIMPLE
+                LOAD_CONST               3 ("' no existe o no fue encontrada.")
+                BUILD_STRING             3
+                BUILD_TUPLE              2
+                RETURN_VALUE
+
+  64    L1:     NOP
+
+  65    L2:     LOAD_GLOBAL              7 (DocxTemplate + NULL)
+                LOAD_FAST                1 (template_path)
+                CALL                     1
+                STORE_FAST               4 (doc)
+
+  68            LOAD_FAST                0 (self)
+                LOAD_ATTR                9 (procesar_reglas_gramaticales + NULL|self)
+                LOAD_FAST                3 (context_vars)
+                CALL                     1
+                STORE_FAST               5 (context)
+
+  71            LOAD_FAST                4 (doc)
+                LOAD_ATTR               11 (render + NULL|self)
+                LOAD_FAST                5 (context)
+                CALL                     1
+                POP_TOP
+
+  74            LOAD_FAST                4 (doc)
+                LOAD_ATTR               13 (save + NULL|self)
+                LOAD_FAST                2 (output_path)
+                CALL                     1
+                POP_TOP
+
+  76            LOAD_CONST               4 (True)
+                LOAD_CONST               5 ('Carta generada exitosamente en:\n')
+                LOAD_FAST                2 (output_path)
+                FORMAT_SIMPLE
+                BUILD_STRING             2
+                BUILD_TUPLE              2
+        L3:     RETURN_VALUE
+
+  --    L4:     PUSH_EXC_INFO
+
+  77            LOAD_GLOBAL             14 (Exception)
+                CHECK_EXC_MATCH
+                POP_JUMP_IF_FALSE       26 (to L9)
+                STORE_FAST               6 (e)
+
+  78    L5:     LOAD_CONST               1 (False)
+                LOAD_CONST               6 ('Error al generar el documento Word:\n')
+                LOAD_GLOBAL             17 (str + NULL)
+                LOAD_FAST                6 (e)
+                CALL                     1
+                FORMAT_SIMPLE
+                BUILD_STRING             2
+                BUILD_TUPLE              2
+        L6:     SWAP                     2
+        L7:     POP_EXCEPT
+                LOAD_CONST               7 (None)
+                STORE_FAST               6 (e)
+                DELETE_FAST              6 (e)
+                RETURN_VALUE
+
+  --    L8:     LOAD_CONST               7 (None)
+                STORE_FAST               6 (e)
+                DELETE_FAST              6 (e)
+                RERAISE                  1
+
+  77    L9:     RERAISE                  0
+
+  --   L10:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
+ExceptionTable:
+  L2 to L3 -> L4 [0]
+  L4 to L5 -> L10 [1] lasti
+  L5 to L6 -> L8 [1] lasti
+  L6 to L7 -> L10 [1] lasti
+  L8 to L10 -> L10 [1] lasti
+
+  --- CODE OBJ: <module> ---
+  CONSTANTS: (0, None, ('DocxTemplate',), <code object WordEngine at 0x000001FC0A730B70, file "src\word_engine.py", line 4>, 'WordEngine')
+  NAMES: ('os', 'docxtpl', 'DocxTemplate', 'WordEngine')
+  VARNAMES: ()
+  FREEVARS: ()
+
+    --- CODE OBJ: WordEngine ---
+    CONSTANTS: ('WordEngine', 4, <code object __init__ at 0x000001FC0A734B90, file "src\word_engine.py", line 5>, 'variables', <code object procesar_reglas_gramaticales at 0x000001FC0A7C81F0, file "src\word_engine.py", line 9>, 'template_path', 'output_path', 'context_vars', 'return', <code object generar_documento at 0x000001FC0A5BA630, file "src\word_engine.py", line 57>, (), None)
+    NAMES: ('__name__', '__module__', '__qualname__', '__firstlineno__', '__init__', 'dict', 'procesar_reglas_gramaticales', 'str', 'tuple', 'bool', 'generar_documento', '__static_attributes__')
+    VARNAMES: ()
+    FREEVARS: ()
+
+      --- CODE OBJ: __init__ ---
+      CONSTANTS: (None,)
+      NAMES: ()
+      VARNAMES: ('self',)
+      FREEVARS: ()
+
+      --- CODE OBJ: procesar_reglas_gramaticales ---
+      CONSTANTS: ('\nAplica reglas gramaticales peruanas a las variables antes de inyectarlas.\n', <code object format_larga at 0x000001FC0A761DE0, file "src\word_engine.py", line 13>, 'FECHA_HOY_CORTA', 'FECHA_HOY_LARGA', ('FECHA_CARTA', 'FECHA_INICIO', 'FECHA_FIN_CALCULADA'), 'DISTRITO', '', 'callao', 'provincia constitucional del callao', 'del Callao', 'DE_DISTRITO', 'de ', 'LISTA_PLANOS', 'ninguno', 'STRING_PLANOS', 1, 0, -1, 'i', 'hi', ' e ', ' y ', ', ', None)
+      NAMES: ('str', 'get', 'strip', 'lower', 'len', 'startswith', 'join')
+      VARNAMES: ('self', 'variables', 'format_larga', 'key', 'distrito', 'planos_lista', 'ult_plano', 'conector', 'str_planos')
+      FREEVARS: ()
+
+        --- CODE OBJ: format_larga ---
+        CONSTANTS: (None, ('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'), '/', ' de ', 1)
+        NAMES: ('str', 'strip', 'split', 'int')
+        VARNAMES: ('fecha_str', 'meses', 'pd', 'pm', 'py')
+        FREEVARS: ()
+
+      --- CODE OBJ: generar_documento ---
+      CONSTANTS: ('\nLee la plantilla docx, reemplaza etiquetas y guarda el resultado.\n', False, "La plantilla '", "' no existe o no fue encontrada.", True, 'Carta generada exitosamente en:\n', 'Error al generar el documento Word:\n', None)
+      NAMES: ('os', 'path', 'exists', 'DocxTemplate', 'procesar_reglas_gramaticales', 'render', 'save', 'Exception', 'str')
+      VARNAMES: ('self', 'template_path', 'output_path', 'context_vars', 'doc', 'context', 'e')
+      FREEVARS: ()

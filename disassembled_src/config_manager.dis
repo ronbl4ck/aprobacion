@@ -1,0 +1,416 @@
+  0           RESUME                   0
+
+  1           LOAD_CONST               0 (0)
+              LOAD_CONST               1 (None)
+              IMPORT_NAME              0 (json)
+              STORE_NAME               0 (json)
+
+  2           LOAD_CONST               0 (0)
+              LOAD_CONST               1 (None)
+              IMPORT_NAME              1 (os)
+              STORE_NAME               1 (os)
+
+  4           LOAD_BUILD_CLASS
+              PUSH_NULL
+              LOAD_CONST               2 (<code object ConfigManager at 0x000001FC0A723990, file "src\config_manager.py", line 4>)
+              MAKE_FUNCTION
+              LOAD_CONST               3 ('ConfigManager')
+              CALL                     2
+              STORE_NAME               2 (ConfigManager)
+              RETURN_CONST             1 (None)
+
+Disassembly of <code object ConfigManager at 0x000001FC0A723990, file "src\config_manager.py", line 4>:
+  4           RESUME                   0
+              LOAD_NAME                0 (__name__)
+              STORE_NAME               1 (__module__)
+              LOAD_CONST               0 ('ConfigManager')
+              STORE_NAME               2 (__qualname__)
+              LOAD_CONST               1 (4)
+              STORE_NAME               3 (__firstlineno__)
+
+  5           LOAD_CONST               9 (('config.json',))
+              LOAD_CONST               2 (<code object __init__ at 0x000001FC0A6159B0, file "src\config_manager.py", line 5>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE   1 (defaults)
+              STORE_NAME               4 (__init__)
+
+ 28           LOAD_CONST               3 (<code object load_config at 0x000001FC0A7FD2A0, file "src\config_manager.py", line 28>)
+              MAKE_FUNCTION
+              STORE_NAME               5 (load_config)
+
+ 37           LOAD_CONST               4 (<code object save_config at 0x000001FC0A5FD8B0, file "src\config_manager.py", line 37>)
+              MAKE_FUNCTION
+              STORE_NAME               6 (save_config)
+
+ 44           LOAD_CONST              10 ((None,))
+              LOAD_CONST               6 (<code object get at 0x000001FC0A712830, file "src\config_manager.py", line 44>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE   1 (defaults)
+              STORE_NAME               7 (get)
+
+ 47           LOAD_CONST               7 (<code object set at 0x000001FC0A723880, file "src\config_manager.py", line 47>)
+              MAKE_FUNCTION
+              STORE_NAME               8 (set)
+              LOAD_CONST               8 (('config', 'config_file'))
+              STORE_NAME               9 (__static_attributes__)
+              RETURN_CONST             5 (None)
+
+Disassembly of <code object __init__ at 0x000001FC0A6159B0, file "src\config_manager.py", line 5>:
+  5           RESUME                   0
+
+  6           LOAD_FAST_LOAD_FAST     16 (config_file, self)
+              STORE_ATTR               0 (config_file)
+
+  7           BUILD_MAP                0
+
+  8           LOAD_CONST               1 ('signature_path')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+  9           LOAD_CONST               3 ('engineer_name')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+ 10           LOAD_CONST               4 ('cip_number')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+ 11           LOAD_CONST               5 ('cover_coords')
+              LOAD_CONST               6 (100)
+              LOAD_CONST               6 (100)
+              BUILD_LIST               2
+
+  7           MAP_ADD                  1
+
+ 12           LOAD_CONST               7 ('body_coords')
+              LOAD_CONST               6 (100)
+              LOAD_CONST               6 (100)
+              BUILD_LIST               2
+
+  7           MAP_ADD                  1
+
+ 13           LOAD_CONST               8 ('cover_page')
+              LOAD_CONST               9 (1)
+
+  7           MAP_ADD                  1
+
+ 14           LOAD_CONST              10 ('body_page_start')
+              LOAD_CONST              11 (2)
+
+  7           MAP_ADD                  1
+
+ 15           LOAD_CONST              12 ('body_page_end')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+ 16           LOAD_CONST              13 ('start_date')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+ 17           LOAD_CONST              14 ('template_path')
+              LOAD_CONST               2 ('')
+
+  7           MAP_ADD                  1
+
+ 18           LOAD_CONST              15 ('cover_scale')
+              LOAD_CONST               6 (100)
+
+  7           MAP_ADD                  1
+
+ 19           LOAD_CONST              16 ('body_scale')
+              LOAD_CONST               6 (100)
+
+  7           MAP_ADD                  1
+
+ 20           LOAD_CONST              17 ('tpl_date1_coords')
+              LOAD_CONST               0 (None)
+
+  7           MAP_ADD                  1
+
+ 21           LOAD_CONST              18 ('tpl_date2_coords')
+              LOAD_CONST               0 (None)
+
+  7           MAP_ADD                  1
+
+ 22           LOAD_CONST              19 ('tpl_sig_coords')
+              LOAD_CONST               0 (None)
+
+  7           MAP_ADD                  1
+
+ 23           LOAD_CONST              20 ('tpl_date_scale')
+              LOAD_CONST               6 (100)
+
+  7           MAP_ADD                  1
+
+ 24           LOAD_CONST              21 ('tpl_sig_scale')
+              LOAD_CONST               6 (100)
+
+  7           MAP_ADD                  1
+              LOAD_FAST                0 (self)
+              STORE_ATTR               1 (config)
+
+ 26           LOAD_FAST                0 (self)
+              LOAD_ATTR                5 (load_config + NULL|self)
+              CALL                     0
+              POP_TOP
+              RETURN_CONST             0 (None)
+
+Disassembly of <code object load_config at 0x000001FC0A7FD2A0, file "src\config_manager.py", line 28>:
+  28            RESUME                   0
+
+  29            LOAD_GLOBAL              0 (os)
+                LOAD_ATTR                2 (path)
+                LOAD_ATTR                5 (exists + NULL|self)
+                LOAD_FAST                0 (self)
+                LOAD_ATTR                6 (config_file)
+                CALL                     1
+                TO_BOOL
+                POP_JUMP_IF_FALSE       81 (to L5)
+
+  30            NOP
+
+  31    L1:     LOAD_GLOBAL              9 (open + NULL)
+                LOAD_FAST                0 (self)
+                LOAD_ATTR                6 (config_file)
+                LOAD_CONST               1 ('r')
+                LOAD_CONST               2 ('utf-8')
+                LOAD_CONST               3 (('encoding',))
+                CALL_KW                  3
+                BEFORE_WITH
+        L2:     STORE_FAST               1 (f)
+
+  32            LOAD_GLOBAL             10 (json)
+                LOAD_ATTR               12 (load)
+                PUSH_NULL
+                LOAD_FAST                1 (f)
+                CALL                     1
+                STORE_FAST               2 (data)
+
+  33            LOAD_FAST                0 (self)
+                LOAD_ATTR               14 (config)
+                LOAD_ATTR               17 (update + NULL|self)
+                LOAD_FAST                2 (data)
+                CALL                     1
+                POP_TOP
+
+  31    L3:     LOAD_CONST               0 (None)
+                LOAD_CONST               0 (None)
+                LOAD_CONST               0 (None)
+                CALL                     2
+                POP_TOP
+        L4:     RETURN_CONST             0 (None)
+
+  29    L5:     RETURN_CONST             0 (None)
+
+  31    L6:     PUSH_EXC_INFO
+                WITH_EXCEPT_START
+                TO_BOOL
+                POP_JUMP_IF_TRUE         1 (to L7)
+                RERAISE                  2
+        L7:     POP_TOP
+        L8:     POP_EXCEPT
+                POP_TOP
+                POP_TOP
+        L9:     RETURN_CONST             0 (None)
+
+  --   L10:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
+       L11:     PUSH_EXC_INFO
+
+  34            LOAD_GLOBAL             18 (Exception)
+                CHECK_EXC_MATCH
+                POP_JUMP_IF_FALSE       24 (to L15)
+                STORE_FAST               3 (e)
+
+  35   L12:     LOAD_GLOBAL             21 (print + NULL)
+                LOAD_CONST               4 ('Error cargando config: ')
+                LOAD_FAST                3 (e)
+                FORMAT_SIMPLE
+                BUILD_STRING             2
+                CALL                     1
+                POP_TOP
+       L13:     POP_EXCEPT
+                LOAD_CONST               0 (None)
+                STORE_FAST               3 (e)
+                DELETE_FAST              3 (e)
+                RETURN_CONST             0 (None)
+
+  --   L14:     LOAD_CONST               0 (None)
+                STORE_FAST               3 (e)
+                DELETE_FAST              3 (e)
+                RERAISE                  1
+
+  34   L15:     RERAISE                  0
+
+  --   L16:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
+ExceptionTable:
+  L1 to L2 -> L11 [0]
+  L2 to L3 -> L6 [1] lasti
+  L3 to L4 -> L11 [0]
+  L6 to L8 -> L10 [3] lasti
+  L8 to L9 -> L11 [0]
+  L10 to L11 -> L11 [0]
+  L11 to L12 -> L16 [1] lasti
+  L12 to L13 -> L14 [1] lasti
+  L14 to L16 -> L16 [1] lasti
+
+Disassembly of <code object save_config at 0x000001FC0A5FD8B0, file "src\config_manager.py", line 37>:
+  37            RESUME                   0
+
+  38            NOP
+
+  39    L1:     LOAD_GLOBAL              1 (open + NULL)
+                LOAD_FAST                0 (self)
+                LOAD_ATTR                2 (config_file)
+                LOAD_CONST               1 ('w')
+                LOAD_CONST               2 ('utf-8')
+                LOAD_CONST               3 (('encoding',))
+                CALL_KW                  3
+                BEFORE_WITH
+        L2:     STORE_FAST               1 (f)
+
+  40            LOAD_GLOBAL              4 (json)
+                LOAD_ATTR                6 (dump)
+                PUSH_NULL
+                LOAD_FAST                0 (self)
+                LOAD_ATTR                8 (config)
+                LOAD_FAST                1 (f)
+                LOAD_CONST               4 (4)
+                LOAD_CONST               5 (('indent',))
+                CALL_KW                  3
+                POP_TOP
+
+  39    L3:     LOAD_CONST               0 (None)
+                LOAD_CONST               0 (None)
+                LOAD_CONST               0 (None)
+                CALL                     2
+                POP_TOP
+        L4:     RETURN_CONST             0 (None)
+        L5:     PUSH_EXC_INFO
+                WITH_EXCEPT_START
+                TO_BOOL
+                POP_JUMP_IF_TRUE         1 (to L6)
+                RERAISE                  2
+        L6:     POP_TOP
+        L7:     POP_EXCEPT
+                POP_TOP
+                POP_TOP
+        L8:     RETURN_CONST             0 (None)
+
+  --    L9:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
+       L10:     PUSH_EXC_INFO
+
+  41            LOAD_GLOBAL             10 (Exception)
+                CHECK_EXC_MATCH
+                POP_JUMP_IF_FALSE       24 (to L14)
+                STORE_FAST               2 (e)
+
+  42   L11:     LOAD_GLOBAL             13 (print + NULL)
+                LOAD_CONST               6 ('Error guardando config: ')
+                LOAD_FAST                2 (e)
+                FORMAT_SIMPLE
+                BUILD_STRING             2
+                CALL                     1
+                POP_TOP
+       L12:     POP_EXCEPT
+                LOAD_CONST               0 (None)
+                STORE_FAST               2 (e)
+                DELETE_FAST              2 (e)
+                RETURN_CONST             0 (None)
+
+  --   L13:     LOAD_CONST               0 (None)
+                STORE_FAST               2 (e)
+                DELETE_FAST              2 (e)
+                RERAISE                  1
+
+  41   L14:     RERAISE                  0
+
+  --   L15:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
+ExceptionTable:
+  L1 to L2 -> L10 [0]
+  L2 to L3 -> L5 [1] lasti
+  L3 to L4 -> L10 [0]
+  L5 to L7 -> L9 [3] lasti
+  L7 to L8 -> L10 [0]
+  L9 to L10 -> L10 [0]
+  L10 to L11 -> L15 [1] lasti
+  L11 to L12 -> L13 [1] lasti
+  L13 to L15 -> L15 [1] lasti
+
+Disassembly of <code object get at 0x000001FC0A712830, file "src\config_manager.py", line 44>:
+ 44           RESUME                   0
+
+ 45           LOAD_FAST                0 (self)
+              LOAD_ATTR                0 (config)
+              LOAD_ATTR                3 (get + NULL|self)
+              LOAD_FAST_LOAD_FAST     18 (key, default)
+              CALL                     2
+              RETURN_VALUE
+
+Disassembly of <code object set at 0x000001FC0A723880, file "src\config_manager.py", line 47>:
+ 47           RESUME                   0
+
+ 48           LOAD_FAST_LOAD_FAST     32 (value, self)
+              LOAD_ATTR                0 (config)
+              LOAD_FAST                1 (key)
+              STORE_SUBSCR
+
+ 49           LOAD_FAST                0 (self)
+              LOAD_ATTR                3 (save_config + NULL|self)
+              CALL                     0
+              POP_TOP
+              RETURN_CONST             0 (None)
+
+  --- CODE OBJ: <module> ---
+  CONSTANTS: (0, None, <code object ConfigManager at 0x000001FC0A723990, file "src\config_manager.py", line 4>, 'ConfigManager')
+  NAMES: ('json', 'os', 'ConfigManager')
+  VARNAMES: ()
+  FREEVARS: ()
+
+    --- CODE OBJ: ConfigManager ---
+    CONSTANTS: ('ConfigManager', 4, <code object __init__ at 0x000001FC0A6159B0, file "src\config_manager.py", line 5>, <code object load_config at 0x000001FC0A7FD2A0, file "src\config_manager.py", line 28>, <code object save_config at 0x000001FC0A5FD8B0, file "src\config_manager.py", line 37>, None, <code object get at 0x000001FC0A712830, file "src\config_manager.py", line 44>, <code object set at 0x000001FC0A723880, file "src\config_manager.py", line 47>, ('config', 'config_file'), ('config.json',), (None,))
+    NAMES: ('__name__', '__module__', '__qualname__', '__firstlineno__', '__init__', 'load_config', 'save_config', 'get', 'set', '__static_attributes__')
+    VARNAMES: ()
+    FREEVARS: ()
+
+      --- CODE OBJ: __init__ ---
+      CONSTANTS: (None, 'signature_path', '', 'engineer_name', 'cip_number', 'cover_coords', 100, 'body_coords', 'cover_page', 1, 'body_page_start', 2, 'body_page_end', 'start_date', 'template_path', 'cover_scale', 'body_scale', 'tpl_date1_coords', 'tpl_date2_coords', 'tpl_sig_coords', 'tpl_date_scale', 'tpl_sig_scale')
+      NAMES: ('config_file', 'config', 'load_config')
+      VARNAMES: ('self', 'config_file')
+      FREEVARS: ()
+
+      --- CODE OBJ: load_config ---
+      CONSTANTS: (None, 'r', 'utf-8', ('encoding',), 'Error cargando config: ')
+      NAMES: ('os', 'path', 'exists', 'config_file', 'open', 'json', 'load', 'config', 'update', 'Exception', 'print')
+      VARNAMES: ('self', 'f', 'data', 'e')
+      FREEVARS: ()
+
+      --- CODE OBJ: save_config ---
+      CONSTANTS: (None, 'w', 'utf-8', ('encoding',), 4, ('indent',), 'Error guardando config: ')
+      NAMES: ('open', 'config_file', 'json', 'dump', 'config', 'Exception', 'print')
+      VARNAMES: ('self', 'f', 'e')
+      FREEVARS: ()
+
+      --- CODE OBJ: get ---
+      CONSTANTS: (None,)
+      NAMES: ('config', 'get')
+      VARNAMES: ('self', 'key', 'default')
+      FREEVARS: ()
+
+      --- CODE OBJ: set ---
+      CONSTANTS: (None,)
+      NAMES: ('config', 'save_config')
+      VARNAMES: ('self', 'key', 'value')
+      FREEVARS: ()

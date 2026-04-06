@@ -1,0 +1,336 @@
+  0           RESUME                   0
+
+  1           LOAD_CONST               0 (0)
+              LOAD_CONST               1 (None)
+              IMPORT_NAME              0 (customtkinter)
+              STORE_NAME               1 (ctk)
+
+  3           LOAD_CONST               0 (0)
+              LOAD_CONST               2 (('ConfigManager',))
+              IMPORT_NAME              2 (src.config_manager)
+              IMPORT_FROM              3 (ConfigManager)
+              STORE_NAME               3 (ConfigManager)
+              POP_TOP
+
+  4           LOAD_CONST               0 (0)
+              LOAD_CONST               3 (('StampEngine',))
+              IMPORT_NAME              4 (src.stamp_engine)
+              IMPORT_FROM              5 (StampEngine)
+              STORE_NAME               5 (StampEngine)
+              POP_TOP
+
+  5           LOAD_CONST               0 (0)
+              LOAD_CONST               4 (('PDFManager',))
+              IMPORT_NAME              6 (src.pdf_manager)
+              IMPORT_FROM              7 (PDFManager)
+              STORE_NAME               7 (PDFManager)
+              POP_TOP
+
+  6           LOAD_CONST               0 (0)
+              LOAD_CONST               5 (('WordEngine',))
+              IMPORT_NAME              8 (src.word_engine)
+              IMPORT_FROM              9 (WordEngine)
+              STORE_NAME               9 (WordEngine)
+              POP_TOP
+
+  7           LOAD_CONST               0 (0)
+              LOAD_CONST               6 (('TabAutofirma',))
+              IMPORT_NAME             10 (src.ui.tab_autofirma)
+              IMPORT_FROM             11 (TabAutofirma)
+              STORE_NAME              11 (TabAutofirma)
+              POP_TOP
+
+  8           LOAD_CONST               0 (0)
+              LOAD_CONST               7 (('TabCarta',))
+              IMPORT_NAME             12 (src.ui.tab_carta)
+              IMPORT_FROM             13 (TabCarta)
+              STORE_NAME              13 (TabCarta)
+              POP_TOP
+
+ 11           LOAD_NAME                1 (ctk)
+              LOAD_ATTR               28 (set_appearance_mode)
+              PUSH_NULL
+              LOAD_CONST               8 ('System')
+              CALL                     1
+              POP_TOP
+
+ 12           LOAD_NAME                1 (ctk)
+              LOAD_ATTR               30 (set_default_color_theme)
+              PUSH_NULL
+              LOAD_CONST               9 ('blue')
+              CALL                     1
+              POP_TOP
+
+ 14           LOAD_BUILD_CLASS
+              PUSH_NULL
+              LOAD_CONST              10 (<code object MainApp at 0x000001FC0A712830, file "src\gui.py", line 14>)
+              MAKE_FUNCTION
+              LOAD_CONST              11 ('MainApp')
+              LOAD_NAME                1 (ctk)
+              LOAD_ATTR               32 (CTk)
+              CALL                     3
+              STORE_NAME              17 (MainApp)
+              RETURN_CONST             1 (None)
+
+Disassembly of <code object MainApp at 0x000001FC0A712830, file "src\gui.py", line 14>:
+  --           MAKE_CELL                0 (__class__)
+
+  14           RESUME                   0
+               LOAD_NAME                0 (__name__)
+               STORE_NAME               1 (__module__)
+               LOAD_CONST               0 ('MainApp')
+               STORE_NAME               2 (__qualname__)
+               LOAD_CONST               1 (14)
+               STORE_NAME               3 (__firstlineno__)
+
+  15           LOAD_FAST                0 (__class__)
+               BUILD_TUPLE              1
+               LOAD_CONST               2 (<code object __init__ at 0x000001FC0A5ADD30, file "src\gui.py", line 15>)
+               MAKE_FUNCTION
+               SET_FUNCTION_ATTRIBUTE   8 (closure)
+               STORE_NAME               4 (__init__)
+
+  29           LOAD_CONST               3 (<code object setup_ui at 0x000001FC0A34A930, file "src\gui.py", line 29>)
+               MAKE_FUNCTION
+               STORE_NAME               5 (setup_ui)
+               LOAD_CONST               4 (('config_manager', 'pdf_manager', 'stamp_engine', 'tab_autofirma', 'tab_carta', 'tab_view', 'word_engine'))
+               STORE_NAME               6 (__static_attributes__)
+               LOAD_FAST                0 (__class__)
+               COPY                     1
+               STORE_NAME               7 (__classcell__)
+               RETURN_VALUE
+
+Disassembly of <code object __init__ at 0x000001FC0A5ADD30, file "src\gui.py", line 15>:
+  --           COPY_FREE_VARS           1
+
+  15           RESUME                   0
+
+  16           LOAD_GLOBAL              0 (super)
+               LOAD_DEREF               1 (__class__)
+               LOAD_FAST                0 (self)
+               LOAD_SUPER_ATTR          5 (__init__ + NULL|self)
+               CALL                     0
+               POP_TOP
+
+  18           LOAD_FAST                0 (self)
+               LOAD_ATTR                5 (title + NULL|self)
+               LOAD_CONST               1 ('Sistema de Aprobación de Factibilidad')
+               CALL                     1
+               POP_TOP
+
+  19           LOAD_FAST                0 (self)
+               LOAD_ATTR                7 (geometry + NULL|self)
+               LOAD_CONST               2 ('1100x700')
+               CALL                     1
+               POP_TOP
+
+  22           LOAD_GLOBAL              9 (ConfigManager + NULL)
+               CALL                     0
+               LOAD_FAST                0 (self)
+               STORE_ATTR               5 (config_manager)
+
+  23           LOAD_GLOBAL             13 (StampEngine + NULL)
+               CALL                     0
+               LOAD_FAST                0 (self)
+               STORE_ATTR               7 (stamp_engine)
+
+  24           LOAD_GLOBAL             17 (PDFManager + NULL)
+               CALL                     0
+               LOAD_FAST                0 (self)
+               STORE_ATTR               9 (pdf_manager)
+
+  25           LOAD_GLOBAL             21 (WordEngine + NULL)
+               CALL                     0
+               LOAD_FAST                0 (self)
+               STORE_ATTR              11 (word_engine)
+
+  27           LOAD_FAST                0 (self)
+               LOAD_ATTR               25 (setup_ui + NULL|self)
+               CALL                     0
+               POP_TOP
+               RETURN_CONST             0 (None)
+
+Disassembly of <code object setup_ui at 0x000001FC0A34A930, file "src\gui.py", line 29>:
+ 29           RESUME                   0
+
+ 30           LOAD_FAST                0 (self)
+              LOAD_ATTR                1 (grid_rowconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 31           LOAD_FAST                0 (self)
+              LOAD_ATTR                3 (grid_columnconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 34           LOAD_GLOBAL              4 (ctk)
+              LOAD_ATTR                6 (CTkTabview)
+              PUSH_NULL
+              LOAD_FAST                0 (self)
+              CALL                     1
+              LOAD_FAST                0 (self)
+              STORE_ATTR               4 (tab_view)
+
+ 35           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               11 (grid + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               4 ('nsew')
+              LOAD_CONST               5 (10)
+              LOAD_CONST               5 (10)
+              LOAD_CONST               6 (('row', 'column', 'sticky', 'padx', 'pady'))
+              CALL_KW                  5
+              POP_TOP
+
+ 38           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               13 (add + NULL|self)
+              LOAD_CONST               7 ('Autofirma (PDF)')
+              CALL                     1
+              POP_TOP
+
+ 39           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               13 (add + NULL|self)
+              LOAD_CONST               8 ('Carta Aprobación (Word)')
+              CALL                     1
+              POP_TOP
+
+ 42           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               7 ('Autofirma (PDF)')
+              CALL                     1
+              LOAD_ATTR                1 (grid_rowconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 43           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               7 ('Autofirma (PDF)')
+              CALL                     1
+              LOAD_ATTR                3 (grid_columnconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 45           LOAD_GLOBAL             17 (TabAutofirma + NULL)
+
+ 46           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               7 ('Autofirma (PDF)')
+              CALL                     1
+
+ 47           LOAD_FAST                0 (self)
+              LOAD_ATTR               18 (config_manager)
+
+ 48           LOAD_FAST                0 (self)
+              LOAD_ATTR               20 (stamp_engine)
+
+ 49           LOAD_FAST                0 (self)
+              LOAD_ATTR               22 (pdf_manager)
+
+ 45           CALL                     4
+              LOAD_FAST                0 (self)
+              STORE_ATTR              12 (tab_autofirma)
+
+ 51           LOAD_FAST                0 (self)
+              LOAD_ATTR               24 (tab_autofirma)
+              LOAD_ATTR               11 (grid + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               4 ('nsew')
+              LOAD_CONST               9 (('row', 'column', 'sticky'))
+              CALL_KW                  3
+              POP_TOP
+
+ 54           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               8 ('Carta Aprobación (Word)')
+              CALL                     1
+              LOAD_ATTR                1 (grid_rowconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 55           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               8 ('Carta Aprobación (Word)')
+              CALL                     1
+              LOAD_ATTR                3 (grid_columnconfigure + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               2 (1)
+              LOAD_CONST               3 (('weight',))
+              CALL_KW                  2
+              POP_TOP
+
+ 57           LOAD_GLOBAL             27 (TabCarta + NULL)
+
+ 58           LOAD_FAST                0 (self)
+              LOAD_ATTR                8 (tab_view)
+              LOAD_ATTR               15 (tab + NULL|self)
+              LOAD_CONST               8 ('Carta Aprobación (Word)')
+              CALL                     1
+
+ 59           LOAD_FAST                0 (self)
+              LOAD_ATTR               18 (config_manager)
+
+ 60           LOAD_FAST                0 (self)
+              LOAD_ATTR               28 (word_engine)
+
+ 57           CALL                     3
+              LOAD_FAST                0 (self)
+              STORE_ATTR              15 (tab_carta)
+
+ 62           LOAD_FAST                0 (self)
+              LOAD_ATTR               30 (tab_carta)
+              LOAD_ATTR               11 (grid + NULL|self)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               1 (0)
+              LOAD_CONST               4 ('nsew')
+              LOAD_CONST               9 (('row', 'column', 'sticky'))
+              CALL_KW                  3
+              POP_TOP
+              RETURN_CONST             0 (None)
+
+  --- CODE OBJ: <module> ---
+  CONSTANTS: (0, None, ('ConfigManager',), ('StampEngine',), ('PDFManager',), ('WordEngine',), ('TabAutofirma',), ('TabCarta',), 'System', 'blue', <code object MainApp at 0x000001FC0A712830, file "src\gui.py", line 14>, 'MainApp')
+  NAMES: ('customtkinter', 'ctk', 'src.config_manager', 'ConfigManager', 'src.stamp_engine', 'StampEngine', 'src.pdf_manager', 'PDFManager', 'src.word_engine', 'WordEngine', 'src.ui.tab_autofirma', 'TabAutofirma', 'src.ui.tab_carta', 'TabCarta', 'set_appearance_mode', 'set_default_color_theme', 'CTk', 'MainApp')
+  VARNAMES: ()
+  FREEVARS: ()
+
+    --- CODE OBJ: MainApp ---
+    CONSTANTS: ('MainApp', 14, <code object __init__ at 0x000001FC0A5ADD30, file "src\gui.py", line 15>, <code object setup_ui at 0x000001FC0A34A930, file "src\gui.py", line 29>, ('config_manager', 'pdf_manager', 'stamp_engine', 'tab_autofirma', 'tab_carta', 'tab_view', 'word_engine'))
+    NAMES: ('__name__', '__module__', '__qualname__', '__firstlineno__', '__init__', 'setup_ui', '__static_attributes__', '__classcell__')
+    VARNAMES: ()
+    FREEVARS: ()
+
+      --- CODE OBJ: __init__ ---
+      CONSTANTS: (None, 'Sistema de Aprobación de Factibilidad', '1100x700')
+      NAMES: ('super', '__init__', 'title', 'geometry', 'ConfigManager', 'config_manager', 'StampEngine', 'stamp_engine', 'PDFManager', 'pdf_manager', 'WordEngine', 'word_engine', 'setup_ui')
+      VARNAMES: ('self',)
+      FREEVARS: ('__class__',)
+
+      --- CODE OBJ: setup_ui ---
+      CONSTANTS: (None, 0, 1, ('weight',), 'nsew', 10, ('row', 'column', 'sticky', 'padx', 'pady'), 'Autofirma (PDF)', 'Carta Aprobación (Word)', ('row', 'column', 'sticky'))
+      NAMES: ('grid_rowconfigure', 'grid_columnconfigure', 'ctk', 'CTkTabview', 'tab_view', 'grid', 'add', 'tab', 'TabAutofirma', 'config_manager', 'stamp_engine', 'pdf_manager', 'tab_autofirma', 'TabCarta', 'word_engine', 'tab_carta')
+      VARNAMES: ('self',)
+      FREEVARS: ()
