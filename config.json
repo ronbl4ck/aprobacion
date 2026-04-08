@@ -1,10 +1,10 @@
 {
     "signature_path": "",
-    "engineer_name": "Luis Navarrete ",
-    "cip_number": "72391902",
+    "engineer_name": "RONALD RENZO REZABAL SAMANIEGO",
+    "cip_number": "",
     "cover_coords": [
-        46.0,
-        627.0
+        76.0,
+        695.0
     ],
     "body_coords": [
         271.0,
@@ -26,14 +26,12 @@
         276
     ],
     "tpl_sig_coords": [
-        62,
-        280,
-        280,
-        354
+        100,
+        315
     ],
     "tpl_date_scale": 100,
-    "tpl_sig_scale": 100,
-    "sello2_mode": "generate",
+    "tpl_sig_scale": 78,
+    "sello2_mode": "custom",
     "apply_sello1": true,
     "apply_sello2": true,
     "cover_ranges": [
