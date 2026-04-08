@@ -1,42 +1,48 @@
-import streamlit as st
-import os
+﻿import datetime
 import io
-import json
-import datetime
-from PIL import Image
+import os
+import tempfile
+
+import streamlit as st
+import streamlit.elements.image as sei
+from PIL import Image, ImageDraw
+
+from src.config_manager import ConfigManager
 from src.pdf_manager import PDFManager
 from src.stamp_engine import StampEngine
-from src.config_manager import ConfigManager
+from src.profile_manager import ProfileManager
 
-# --- HOTFIX for streamlit-drawable-canvas + Streamlit 1.40+ ---
-import streamlit.elements.image as sei
 try:
     from streamlit.elements.lib import image_utils
+
     _real_image_to_url = image_utils.image_to_url
+
     def wrapped_image_to_url(image_data, layout_config, *args, **kwargs):
         if isinstance(layout_config, int):
             from dataclasses import dataclass
+
             @dataclass
             class FakeConfig:
                 width: int
                 use_column_width: bool = False
+
             return _real_image_to_url(image_data, FakeConfig(width=layout_config), *args, **kwargs)
         return _real_image_to_url(image_data, layout_config, *args, **kwargs)
+
     sei.image_to_url = wrapped_image_to_url
 except Exception:
     pass
-# --------------------------------------------------------------
+
 from streamlit_drawable_canvas import st_canvas
 
 
 def process_transparency(img_bytes, threshold=240, clean=False):
-    if not clean: return img_bytes
-    from PIL import Image
-    import io
+    if not clean:
+        return img_bytes
+
     img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-    data = img.getdata()
     new_data = []
-    for item in data:
+    for item in img.getdata():
         if item[0] >= threshold and item[1] >= threshold and item[2] >= threshold:
             new_data.append((255, 255, 255, 0))
         else:
@@ -44,44 +50,109 @@ def process_transparency(img_bytes, threshold=240, clean=False):
             if avg > threshold - 30:
                 alpha = int(255 * ((threshold - avg) / 30))
                 new_data.append((item[0], item[1], item[2], max(0, alpha)))
-            else: new_data.append(item)
+            else:
+                new_data.append(item)
+
     img.putdata(new_data)
     out = io.BytesIO()
     img.save(out, format="PNG")
     return out.getvalue()
 
-# --- CONFIGURACIÓN DE PÁGINA ---
+
+def get_body_preview_size(cfg):
+    base_factor = 0.35
+
+    if cfg.get("sello2_mode") == "custom" and "custom_stamp_bytes" in st.session_state:
+        custom_img = Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)).convert("RGBA")
+        return (
+            custom_img.size[0] * base_factor * (cfg.get("body_scale", 100) / 100.0),
+            custom_img.size[1] * base_factor * (cfg.get("body_scale", 100) / 100.0),
+        )
+
+    if "signature_bytes" not in st.session_state:
+        return (0, 0)
+
+    tmp_sig_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_sig:
+            tmp_sig.write(st.session_state.signature_bytes)
+            tmp_sig_path = tmp_sig.name
+
+        sw, sh = st.session_state.stamp_engine.get_body_stamp_size(
+            tmp_sig_path,
+            cfg.get("engineer_name"),
+            cfg.get("cip_number"),
+            cfg.get("engineer_type"),
+        )
+        return (
+            sw * base_factor * (cfg.get("body_scale", 100) / 100.0),
+            sh * base_factor * (cfg.get("body_scale", 100) / 100.0),
+        )
+    finally:
+        if tmp_sig_path and os.path.exists(tmp_sig_path):
+            os.remove(tmp_sig_path)
+
+
+def get_plano_settings(cfg, page_idx):
+    plano_settings = cfg.get("plano_page_settings", {}) or {}
+    page_settings = plano_settings.get(str(page_idx), {}) or {}
+    return {
+        "apply_sello1": page_settings.get("apply_sello1", True),
+        "apply_sello2": page_settings.get("apply_sello2", True),
+        "cover_coords": page_settings.get("cover_coords"),
+        "body_coords": page_settings.get("body_coords"),
+    }
+
+
 st.set_page_config(
-    page_title="Autofirma PDF | Sistema Aprobación",
-    page_icon="🖋️",
+    page_title="Autofirma PDF | Sistema de Aprobacion",
+    page_icon="P",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- GOOGLE FONTS (Inter) ---
-st.markdown("""
+st.markdown(
+    """
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-""", unsafe_allow_html=True)
-
-# --- ESTILOS PREMIUM ---
-st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    *, html, body, [class*="st-"] {
+    html, body, .main, .main button, .main input, .main textarea, .main select,
+    .main label, .main p, .main span, .main li, .main div:not([data-testid]),
+    section[data-testid="stSidebar"], section[data-testid="stSidebar"] button,
+    section[data-testid="stSidebar"] input, section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p {
         font-family: 'Inter', sans-serif !important;
     }
 
-    .main { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%); }
+    .material-symbols-rounded,
+    .material-icons,
+    [data-testid="icon"],
+    section[data-testid="stSidebar"] button span,
+    section[data-testid="stSidebar"] button i,
+    [data-testid="stExpanderToggleIcon"] span,
+    [data-testid="stExpanderToggleIcon"] i {
+        font-family: "Material Symbols Rounded", "Material Icons" !important;
+    }
+
+    .main {
+        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    }
+
+    .main p, .main li, .main span {
+        color: #8b949e;
+    }
 
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
         border-right: 1px solid rgba(48, 54, 61, 0.6);
     }
+
     section[data-testid="stSidebar"] * {
         color: #c9d1d9 !important;
     }
+
     section[data-testid="stSidebar"] .stTextInput > div > div > input,
     section[data-testid="stSidebar"] .stSelectbox > div > div {
         background-color: #21262d !important;
@@ -90,15 +161,18 @@ st.markdown("""
         border-radius: 8px;
     }
 
-    h1 { 
+    h1 {
         background: linear-gradient(90deg, #58a6ff, #bc8cff, #f778ba);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 700 !important;
         letter-spacing: -0.5px;
     }
-    h2, h3 { color: #c9d1d9 !important; font-weight: 600 !important; }
-    p, span, label, div { color: #8b949e; }
+
+    h2, h3 {
+        color: #c9d1d9 !important;
+        font-weight: 600 !important;
+    }
 
     .stButton > button {
         width: 100%;
@@ -111,6 +185,7 @@ st.markdown("""
         letter-spacing: 0.5px;
         font-size: 0.85em;
     }
+
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(88, 166, 255, 0.25);
@@ -127,11 +202,6 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .stDownloadButton > button:hover {
-        background: linear-gradient(135deg, #2ea043, #3fb950) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(46, 160, 67, 0.35) !important;
-    }
 
     .stExpander {
         border: 1px solid #30363d !important;
@@ -139,9 +209,24 @@ st.markdown("""
         background-color: rgba(22, 27, 34, 0.6) !important;
         backdrop-filter: blur(10px);
     }
+
     .stExpander summary {
         color: #c9d1d9 !important;
         font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .stExpander summary p {
+        margin: 0 !important;
+        color: #c9d1d9 !important;
+    }
+
+    .stExpander summary svg {
+        flex: 0 0 auto !important;
+        margin-right: 0.25rem !important;
     }
 
     div[data-testid="stFileUploader"] {
@@ -150,6 +235,7 @@ st.markdown("""
         background: rgba(22, 27, 34, 0.4) !important;
         transition: border-color 0.3s;
     }
+
     div[data-testid="stFileUploader"]:hover {
         border-color: #58a6ff !important;
     }
@@ -158,17 +244,16 @@ st.markdown("""
         background: linear-gradient(90deg, #58a6ff, #bc8cff) !important;
     }
 
-    .stRadio > div { gap: 0.5rem; }
+    .stRadio > div {
+        gap: 0.5rem;
+    }
+
     .stRadio label {
         background: rgba(22, 27, 34, 0.6) !important;
         border: 1px solid #30363d !important;
         border-radius: 8px !important;
         padding: 8px 16px !important;
         transition: all 0.2s !important;
-    }
-    .stRadio label:hover {
-        border-color: #58a6ff !important;
-        background: rgba(88, 166, 255, 0.1) !important;
     }
 
     .glass-card {
@@ -187,8 +272,18 @@ st.markdown("""
         padding: 1rem 1.5rem;
         text-align: center;
     }
-    .metric-card h3 { font-size: 2rem !important; color: #58a6ff !important; margin: 0 !important; }
-    .metric-card p { font-size: 0.8rem; color: #8b949e; margin: 0; }
+
+    .metric-card h3 {
+        font-size: 2rem !important;
+        color: #58a6ff !important;
+        margin: 0 !important;
+    }
+
+    .metric-card p {
+        font-size: 0.8rem;
+        color: #8b949e;
+        margin: 0;
+    }
 
     .footer-text {
         text-align: center;
@@ -205,275 +300,486 @@ st.markdown("""
         border: 1px solid #30363d;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-
-# --- INICIALIZACIÓN DE ESTADO ---
-if 'config_mgr' not in st.session_state:
+if "config_mgr" not in st.session_state:
     st.session_state.config_mgr = ConfigManager()
-
-if 'pdf_manager' not in st.session_state:
+if "pdf_manager" not in st.session_state:
     st.session_state.pdf_manager = PDFManager()
-
-if 'stamp_engine' not in st.session_state:
+if "stamp_engine" not in st.session_state:
     st.session_state.stamp_engine = StampEngine()
+if "pdf_ready_data" not in st.session_state:
+    st.session_state.pdf_ready_data = None
+if "pdf_ready_name" not in st.session_state:
+    st.session_state.pdf_ready_name = ""
+if "canvas_nonce" not in st.session_state:
+    st.session_state.canvas_nonce = 0
+if "layout_canvas_nonce" not in st.session_state:
+    st.session_state.layout_canvas_nonce = 0
+if "profile_mgr" not in st.session_state:
+    st.session_state.profile_mgr = ProfileManager()
+if "active_profile" not in st.session_state:
+    st.session_state.active_profile = None
 
 cfg = st.session_state.config_mgr
-if 'pdf_ready_data' not in st.session_state:
-    st.session_state.pdf_ready_data = None
-if 'pdf_ready_name' not in st.session_state:
-    st.session_state.pdf_ready_name = ''
 
-
-# --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("### 🖋️ Autofirma")
-    st.caption("Sistema de Aprobación de Factibilidad")
+    st.markdown("### Autofirma")
+    st.caption("Sistema de Aprobacion de Factibilidad")
     st.divider()
-
-    st.markdown("##### 👤 Datos del Ingeniero")
-    new_name = st.text_input("Nombre Completo", value=cfg.get("engineer_name", ""), key="sb_name")
-    new_cip = st.text_input("Número CIP", value=cfg.get("cip_number", ""), key="sb_cip")
-    new_type = st.text_input("Título Profesional", value=cfg.get("engineer_type", "Ingeniero Electricista"), key="sb_type")
-
-    # Guardar cambios  
-    if new_name != cfg.get("engineer_name", ""):
-        cfg.set("engineer_name", new_name)
-    if new_cip != cfg.get("cip_number", ""):
-        cfg.set("cip_number", new_cip)
-    if new_type != cfg.get("engineer_type", "Ingeniero Electricista"):
-        cfg.set("engineer_type", new_type)
-
-    st.divider()
-
-    st.markdown("##### ✨ Limpieza de Fondo")
-    clean_bg = st.checkbox("🪄 Remover fondo blanco", value=cfg.get("clean_bg", False), key="chk_bg", help="Convierte fondos blancos a transparentes.")
-    bg_threshold = 240
-    if clean_bg:
-        bg_threshold = st.slider("Sensibilidad de Blanco", 150, 255, int(cfg.get("bg_threshold", 240)), key="slider_bg")
-    if clean_bg != cfg.get("clean_bg", False): cfg.set("clean_bg", clean_bg)
-    if clean_bg and float(bg_threshold) != float(cfg.get("bg_threshold", 240.0)): cfg.set("bg_threshold", bg_threshold)
-
-    st.markdown("##### ✍️ Firma Digital")
-    uploaded_sig = st.file_uploader("Subir Firma", type=["png", "jpg", "jpeg"], key="sig_uploader")
-    if uploaded_sig:
-        st.session_state.raw_signature_bytes = uploaded_sig.read()
-        uploaded_sig.seek(0)
-    if 'raw_signature_bytes' in st.session_state:
-        st.session_state.signature_bytes = process_transparency(st.session_state.raw_signature_bytes, threshold=bg_threshold, clean=clean_bg)
-        st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma Procesada", use_container_width=True)
-    elif 'signature_bytes' in st.session_state:
-        st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual", use_container_width=True)
-    else:
-        st.info("Sube tu firma (PNG/JPG) para generar sellos")
-
-    st.divider()
-
-    # Modo Sello 2
-    st.markdown("##### ⚙️ Modo Sello 2")
-    sello2_mode = st.radio(
-        "Tipo de Sello para Cuerpo:",
-        ["Generar (Nombre + CIP)", "Imagen Pre-diseñada"],
-        index=0 if cfg.get("sello2_mode", "generate") == "generate" else 1,
-        key="sello2_mode_radio",
-        horizontal=True
-    )
-    if "Pre-diseñada" in sello2_mode:
-        cfg.set("sello2_mode", "custom")
-        custom_stamp = st.file_uploader("Subir Sello Pre-diseñado", type=["png", "jpg", "jpeg"], key="custom_stamp_uploader")
-        if custom_stamp:
-            st.session_state.raw_custom_stamp_bytes = custom_stamp.read()
-            st.success("Sello personalizado cargado")
-        if 'raw_custom_stamp_bytes' in st.session_state:
-            st.session_state.custom_stamp_bytes = process_transparency(st.session_state.raw_custom_stamp_bytes, threshold=bg_threshold, clean=clean_bg)
-            st.caption("Sello procesado:")
-            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), use_container_width=True)
-    else:
-        cfg.set("sello2_mode", "generate")
+    
+    prof_mgr = st.session_state.profile_mgr
 
 
-# --- CUERPO PRINCIPAL ---
-st.title("🖋️ Autofirma de Documentos PDF")
-st.markdown('<p style="color: #8b949e; font-size: 1.05rem; margin-top: -10px;">Carga tu documento, posiciona tus sellos y genera tu PDF firmado en segundos.</p>', unsafe_allow_html=True)
 
-# --- MÉTRICAS ---
+    if st.session_state.active_profile:
+        st.markdown("##### Limpieza de Fondo")
+        clean_bg = st.checkbox(
+            "Remover fondo blanco",
+            value=cfg.get("clean_bg", False),
+            key="chk_bg",
+            help="Convierte fondos blancos a transparentes.",
+        )
+        bg_threshold = 240
+        if clean_bg:
+            bg_threshold = st.slider("Sensibilidad del blanco", 150, 255, int(cfg.get("bg_threshold", 240)), key="slider_bg")
+        if clean_bg != cfg.get("clean_bg", False):
+            cfg.set("clean_bg", clean_bg)
+        if clean_bg and float(bg_threshold) != float(cfg.get("bg_threshold", 240.0)):
+            cfg.set("bg_threshold", bg_threshold)
+
+        if "raw_signature_bytes" in st.session_state:
+            st.session_state.signature_bytes = process_transparency(
+                st.session_state.raw_signature_bytes,
+                threshold=bg_threshold,
+                clean=clean_bg,
+            )
+            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_container_width=True)
+        else:
+            st.info("Este perfil no tiene firma pura subida.")
+
+        if cfg.get("sello2_mode") == "custom" and "raw_custom_stamp_bytes" in st.session_state:
+            st.session_state.custom_stamp_bytes = process_transparency(
+                st.session_state.raw_custom_stamp_bytes,
+                threshold=bg_threshold,
+                clean=clean_bg,
+            )
+            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_container_width=True)
+
+        st.divider()
+
+
+
+st.title("Autofirma de Documentos PDF")
+st.markdown(
+    '<p style="color: #8b949e; font-size: 1.05rem; margin-top: -10px;">'
+    "Carga tu documento, posiciona tus sellos y genera tu PDF firmado en segundos."
+    "</p>",
+    unsafe_allow_html=True,
+)
+
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+has_active_profile = bool(st.session_state.active_profile)
+metric_name = cfg.get("engineer_name", "-") if has_active_profile else "-"
+metric_cip = cfg.get("cip_number", "-") if has_active_profile else "-"
+metric_pages = st.session_state.get("total_pages", 0) if has_active_profile else 0
+metric_status = "Listo" if (has_active_profile and "signature_bytes" in st.session_state and metric_pages > 0) else (
+    "Pendiente" if has_active_profile else "Sin perfil"
+)
 with col_m1:
-    st.markdown(f'<div class="metric-card"><h3>{cfg.get("engineer_name", "—") or "—"}</h3><p>Ingeniero</p></div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="metric-card"><h3>{metric_name or "-"}</h3><p>Ingeniero</p></div>',
+        unsafe_allow_html=True,
+    )
 with col_m2:
-    st.markdown(f'<div class="metric-card"><h3>{cfg.get("cip_number", "—") or "—"}</h3><p>N° CIP</p></div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="metric-card"><h3>{metric_cip or "-"}</h3><p>No. CIP</p></div>',
+        unsafe_allow_html=True,
+    )
 with col_m3:
-    pages_loaded = st.session_state.get("total_pages", 0)
-    st.markdown(f'<div class="metric-card"><h3>{pages_loaded}</h3><p>Páginas</p></div>', unsafe_allow_html=True)
+    pages_loaded = metric_pages
+    st.markdown(f'<div class="metric-card"><h3>{metric_pages}</h3><p>Paginas</p></div>', unsafe_allow_html=True)
 with col_m4:
-    status_text = "✅ Listo" if ('signature_bytes' in st.session_state and pages_loaded > 0) else "⏳ Pendiente"
-    st.markdown(f'<div class="metric-card"><h3>{status_text}</h3><p>Estado</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><h3>{metric_status}</h3><p>Estado</p></div>', unsafe_allow_html=True)
 
-st.markdown("")
+if not st.session_state.active_profile:
+    st.markdown('<div class="glass-card" style="padding: 2rem; margin-top: 2rem;">', unsafe_allow_html=True)
+    tab_login, tab_register = st.tabs(["Ingresar", "Registrar Nuevo Perfil"])
+    
+    prof_mgr = st.session_state.profile_mgr
+    
+    with tab_login:
+        profile_names = prof_mgr.get_profile_names()
+        st.subheader("Acceso de Ingeniero")
+        if not profile_names:
+            st.info("No hay perfiles creados. Ve a 'Registrar Nuevo Perfil'.")
+        else:
+            sel_prof = st.selectbox("Seleccionar Perfil", ["-- Seleccionar --"] + profile_names, key="sel_prof_login")
+            if sel_prof != "-- Seleccionar --":
+                pin_input = st.text_input("PIN (6 digitos)", type="password", key="pin_login")
+                if st.button("Ingresar", key="btn_login", type="primary", use_container_width=True):
+                    auth_data = prof_mgr.authenticate(sel_prof, pin_input)
+                    if auth_data:
+                        st.session_state.active_profile = auth_data["name"]
+                        cfg.set("engineer_name", auth_data["name"])
+                        cfg.set("cip_number", auth_data["cip"])
+                        cfg.set("engineer_type", auth_data["title"])
+                        cfg.set("sello2_mode", auth_data.get("sello2_mode", "generate"))
+                        
+                        if "tpl_coords" in auth_data:
+                            cfg.config["tpl_date1_coords"] = auth_data["tpl_coords"].get("date1")
+                            cfg.config["tpl_date2_coords"] = auth_data["tpl_coords"].get("date2")
+                            cfg.config["tpl_sig_coords"] = auth_data["tpl_coords"].get("sig")
+                            cfg.config["tpl_date_scale"] = auth_data["tpl_coords"].get("date_scale", 100)
+                            cfg.config["tpl_sig_scale"] = auth_data["tpl_coords"].get("sig_scale", 100)
+                            cfg.save_config()
 
-# --- LAYOUT PRINCIPAL ---
+                        if auth_data.get("signature_bytes"):
+                            st.session_state.raw_signature_bytes = auth_data["signature_bytes"]
+                        if auth_data.get("custom_stamp_bytes"):
+                            st.session_state.raw_custom_stamp_bytes = auth_data["custom_stamp_bytes"]
+                        st.rerun()
+                    else:
+                        st.error("PIN incorrecto.")
+                        
+    with tab_register:
+        st.subheader("Crear Nuevo Perfil de Ingeniero")
+        col_rg1, col_rg2 = st.columns([1, 1.2])
+        with col_rg1:
+            new_prof_name = st.text_input("Nombre Completo", key="new_prof_name")
+            new_prof_cip = st.text_input("No. CIP", key="new_prof_cip")
+            new_prof_title = st.text_input("Titulo Profesional", value="Ingeniero Electricista", key="new_prof_title")
+            new_prof_pin = st.text_input("PIN (6 digitos)", type="password", key="new_prof_pin")
+            st.markdown("**Firma y Sellos**")
+            new_prof_sig = st.file_uploader("Firma Pura (Para Caratula)", type=["png", "jpg", "jpeg"], key="new_prof_sig")
+            
+            s_mode = st.radio("Sello 2 (Cuerpo)", ["Generar Automatico", "Usar Sello Completo"], key="new_prof_mode")
+            new_prof_custom = None
+            if "Completo" in s_mode:
+                new_prof_custom = st.file_uploader("Imagen Sello Completo", type=["png", "jpg", "jpeg"], key="new_prof_custom")
+                
+        with col_rg2:
+            st.markdown("**Editor de Layout (Caratula Sello 1)**")
+            base_tpl_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "plantilla_caratula.png")
+            if not os.path.exists(base_tpl_path):
+                base_tpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "plantilla_caratula.png")
+            
+            if os.path.exists(base_tpl_path):
+                tpl_img = Image.open(base_tpl_path).convert("RGBA")
+                
+                edit_mode = st.radio("Mover:", ["Firma", "Fecha Inicial", "Fecha Final"], horizontal=True, key="rg_edit_mode")
+                stroke_color = "#f778ba" if "Firma" in edit_mode else ("#58a6ff" if "Inicial" in edit_mode else "#50fa7b")
+                st.caption("Ajusta la posicion haciendo clic en la imagen.")
+                
+                # Default coords
+                if "rg_tpl_coords" not in st.session_state:
+                    st.session_state.rg_tpl_coords = {
+                        "date1": [int(tpl_img.size[0]*0.55), int(tpl_img.size[1]*0.53)],
+                        "date2": [int(tpl_img.size[0]*0.55), int(tpl_img.size[1]*0.69)],
+                        "sig": [int(tpl_img.size[0]*0.1), int(tpl_img.size[1]*0.7)],
+                        "date_scale": 100,
+                        "sig_scale": 100
+                    }
+
+                preview_img = tpl_img.copy()
+                preview_draw = ImageDraw.Draw(preview_img, "RGBA")
+                display_scale = 0.8
+
+                coords = st.session_state.rg_tpl_coords
+                date_scale = coords.get("date_scale", 100)
+                sig_scale = coords.get("sig_scale", 100)
+
+                date_font_size = int((tpl_img.size[1] * 0.08) * (date_scale / 100.0))
+                date_box_w = max(int(date_font_size * 4.8), 90)
+                date_box_h = max(int(date_font_size * 1.25), 24)
+
+                sig_w = int(tpl_img.size[0] * 0.35 * (sig_scale / 100.0))
+                sig_h = max(int(sig_w * 0.38), 30)
+                if new_prof_sig:
+                    try:
+                        sig_preview = Image.open(io.BytesIO(new_prof_sig.getvalue()))
+                        ratio = sig_w / float(sig_preview.size[0])
+                        sig_h = max(int(float(sig_preview.size[1]) * ratio), 30)
+                    except Exception:
+                        pass
+
+                overlay_specs = [
+                    ("sig", (247, 120, 186, 70), (247, 120, 186), (sig_w, sig_h), "Firma"),
+                    ("date1", (88, 166, 255, 70), (88, 166, 255), (date_box_w, date_box_h), "Fecha Inicial"),
+                    ("date2", (80, 250, 123, 70), (80, 250, 123), (date_box_w, date_box_h), "Fecha Final"),
+                ]
+
+                for key_name, fill_rgba, outline_rgb, (box_w, box_h), label in overlay_specs:
+                    box_coords = coords.get(key_name)
+                    if not box_coords:
+                        continue
+                    x0, y0 = box_coords
+                    x1, y1 = x0 + box_w, y0 + box_h
+                    preview_draw.rectangle([x0, y0, x1, y1], fill=fill_rgba, outline=outline_rgb, width=3)
+                    preview_draw.text((x0 + 6, max(y0 - 22, 0)), label, fill=outline_rgb)
+
+                canvas_result = st_canvas(
+                    fill_color="rgba(255, 165, 0, 0.3)",
+                    stroke_width=4,
+                    stroke_color=stroke_color,
+                    background_image=preview_img,
+                    update_streamlit=True,
+                    height=int(preview_img.size[1] * display_scale), # scale down a bit to fit on screen
+                    width=int(preview_img.size[0] * display_scale),
+                    drawing_mode="point",
+                    point_display_radius=8,
+                    key=f"canvas_rg_tpl_{edit_mode}_{st.session_state.layout_canvas_nonce}",
+                )
+                
+                if canvas_result.json_data is not None:
+                    objects = canvas_result.json_data.get("objects", [])
+                    if objects:
+                        last_point = objects[-1]
+                        # adjust back scale
+                        px, py = int(last_point["left"] / display_scale), int(last_point["top"] / display_scale)
+                        if "Firma" in edit_mode:
+                            st.session_state.rg_tpl_coords["sig"] = [px, py]
+                        elif "Inicial" in edit_mode:
+                            st.session_state.rg_tpl_coords["date1"] = [px, py]
+                        elif "Final" in edit_mode:
+                            st.session_state.rg_tpl_coords["date2"] = [px, py]
+                        st.session_state.layout_canvas_nonce += 1
+                        st.rerun()
+                
+                col_scale1, col_scale2 = st.columns(2)
+                with col_scale1:
+                    st.session_state.rg_tpl_coords["sig_scale"] = st.slider("Escala Firma (%)", 50, 200, st.session_state.rg_tpl_coords["sig_scale"], key="rg_scale_sig")
+                with col_scale2:
+                    st.session_state.rg_tpl_coords["date_scale"] = st.slider("Escala Fechas (%)", 50, 200, st.session_state.rg_tpl_coords["date_scale"], key="rg_scale_date")
+            else:
+                st.error("No se encontro assets/plantilla_caratula.png")
+
+        if st.button("Crear y Guardar Perfil", key="btn_save_prof", type="primary", use_container_width=True):
+            if not new_prof_name or not new_prof_pin or len(new_prof_pin) < 4:
+                st.error("Nombre y PIN valido (min 4 digitos) requeridos.")
+            else:
+                sig_bytes = new_prof_sig.read() if new_prof_sig else None
+                c_bytes = new_prof_custom.read() if new_prof_custom else None
+                s2_val = "custom" if "Completo" in s_mode else "generate"
+                
+                tpl_coords = st.session_state.get("rg_tpl_coords")
+                prof_mgr.add_profile(
+                    new_prof_name, new_prof_cip, new_prof_title, sig_bytes, new_prof_pin, 
+                    sello2_mode=s2_val, custom_stamp_bytes=c_bytes, tpl_coords=tpl_coords
+                )
+                st.success("Perfil creado exitosamente. Ve a la pestana 'Ingresar'.")
+                if "rg_tpl_coords" in st.session_state:
+                    del st.session_state.rg_tpl_coords
+                st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
 col_config, col_preview = st.columns([1, 2])
 
 with col_config:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.subheader("📂 Documento PDF")
+    st.subheader("Documento PDF")
     uploaded_pdf = st.file_uploader("Seleccionar archivo PDF", type=["pdf"], key="pdf_uploader")
 
     if uploaded_pdf:
-        if 'pdf_bytes' not in st.session_state or st.session_state.get('pdf_name') != uploaded_pdf.name:
+        if "pdf_bytes" not in st.session_state or st.session_state.get("pdf_name") != uploaded_pdf.name:
             st.session_state.pdf_bytes = uploaded_pdf.read()
             st.session_state.pdf_name = uploaded_pdf.name
-            pdf_doc, total_pages = st.session_state.pdf_manager.load_pdf(io.BytesIO(st.session_state.pdf_bytes))
+            pdf_doc, total_pages, planos_idx = st.session_state.pdf_manager.load_pdf(io.BytesIO(st.session_state.pdf_bytes))
             st.session_state.pdf_doc = pdf_doc
             st.session_state.total_pages = total_pages
+            st.session_state.planos_idx = planos_idx
             st.rerun()
 
-        st.success(f"📄 **{st.session_state.pdf_name}** — {st.session_state.total_pages} páginas")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.success(f"Archivo: **{st.session_state.pdf_name}** - {st.session_state.total_pages} paginas")
+        if st.session_state.get("planos_idx"):
+            total_planos = len(st.session_state.planos_idx)
+            sufijo = "pagina" if total_planos == 1 else "paginas"
+            st.warning(f"Se detectaron **{total_planos}** {sufijo} con formato de plano. Podras ubicarlas independientemente.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- FECHA ---
-    with st.expander("📅 Fecha del Sello 1", expanded=True):
-        today_str = datetime.date.today().strftime('%d/%m/%Y')
+    with st.expander("Fecha del Sello 1", expanded=True):
+        today_str = datetime.date.today().strftime("%d/%m/%Y")
         saved_date = cfg.get("start_date", "")
-        start_date = st.text_input("Fecha (DD/MM/YYYY)", value=saved_date if saved_date else today_str, key="start_date_input")
-        if st.button("📆 Usar Fecha de Hoy", key="btn_today"):
+        
+        def set_today():
             cfg.set("start_date", today_str)
-            st.rerun()
+            st.session_state["start_date_input"] = today_str
+
+        if "start_date_input" not in st.session_state:
+            st.session_state["start_date_input"] = saved_date if saved_date else today_str
+
+        start_date = st.text_input("Fecha (DD/MM/YYYY)", key="start_date_input")
+        st.button("Usar Fecha de Hoy", key="btn_today", on_click=set_today)
+        
         if start_date != cfg.get("start_date", ""):
             cfg.set("start_date", start_date)
 
-    # --- SELLOS ON/OFF ---
-    with st.expander("🖋️ Sellos a Aplicar", expanded=True):
-        apply_s1 = st.checkbox("Aplicar Sello 1 (Carátula / V°B°)", value=cfg.get("apply_sello1", True), key="chk_s1")
-        apply_s2 = st.checkbox("Aplicar Sello 2 (Cuerpo)", value=cfg.get("apply_sello2", True), key="chk_s2")
-        cfg.config['apply_sello1'] = apply_s1
-        cfg.config['apply_sello2'] = apply_s2
+    with st.expander("Sellos a Aplicar", expanded=True):
+        cfg.config["apply_sello1"] = st.checkbox(
+            "Aplicar Sello 1 (Caratula / V.B.)",
+            value=cfg.get("apply_sello1", True),
+            key="chk_s1",
+        )
+        cfg.config["apply_sello2"] = st.checkbox(
+            "Aplicar Sello 2 (Cuerpo)",
+            value=cfg.get("apply_sello2", True),
+            key="chk_s2",
+        )
 
-    # --- ESCALAS ---
-    with st.expander("📐 Escalas", expanded=False):
-        cover_scale = st.slider("Escala Sello 1 (%)", 10, 200, int(cfg.get("cover_scale", 100)), key="slider_cover_scale")
-        body_scale = st.slider("Escala Sello 2 (%)", 10, 200, int(cfg.get("body_scale", 100)), key="slider_body_scale")
-        cfg.config['cover_scale'] = cover_scale
-        cfg.config['body_scale'] = body_scale
+    with st.expander("Escalas", expanded=False):
+        cfg.config["cover_scale"] = st.slider("Escala Sello 1 (%)", 10, 200, int(cfg.get("cover_scale", 100) or 100), key="slider_cover_scale")
+        cfg.config["body_scale"] = st.slider("Escala Sello 2 (%)", 10, 200, int(cfg.get("body_scale", 100) or 100), key="slider_body_scale")
 
-    # --- RANGOS DE PÁGINAS ---
-    with st.expander("📑 Rangos de Páginas", expanded=False):
-        st.markdown("**Sello 1 (Carátula)**")
-        cover_ranges_raw = cfg.get("cover_ranges", [{"start": "1", "end": "1"}])
-        if not cover_ranges_raw:
-            cover_ranges_raw = [{"start": "1", "end": "1"}]
-        cover_ranges = st.data_editor(
+    with st.expander("Rangos de Paginas", expanded=False):
+        st.markdown("**Sello 1 (Caratula)**")
+        cover_ranges_raw = cfg.get("cover_ranges", [{"start": "1", "end": "1"}]) or [{"start": "1", "end": "1"}]
+        cfg.config["cover_ranges"] = st.data_editor(
             cover_ranges_raw,
             num_rows="dynamic",
             key="de_cover_ranges",
             column_config={
-                "start": st.column_config.TextColumn("Desde Pág"),
-                "end": st.column_config.TextColumn("Hasta Pág"),
-            }
+                "start": st.column_config.TextColumn("Desde Pag"),
+                "end": st.column_config.TextColumn("Hasta Pag"),
+            },
         )
-        cfg.config['cover_ranges'] = cover_ranges
 
         st.markdown("**Sello 2 (Cuerpo)**")
-        body_ranges_raw = cfg.get("body_ranges", [{"start": "2", "end": "final"}])
-        if not body_ranges_raw:
-            body_ranges_raw = [{"start": "2", "end": "final"}]
-        body_ranges = st.data_editor(
+        body_ranges_raw = cfg.get("body_ranges", [{"start": "2", "end": "final"}]) or [{"start": "2", "end": "final"}]
+        cfg.config["body_ranges"] = st.data_editor(
             body_ranges_raw,
             num_rows="dynamic",
             key="de_body_ranges",
             column_config={
-                "start": st.column_config.TextColumn("Desde Pág"),
-                "end": st.column_config.TextColumn("Hasta Pág"),
-            }
+                "start": st.column_config.TextColumn("Desde Pag"),
+                "end": st.column_config.TextColumn("Hasta Pag"),
+            },
         )
-        cfg.config['body_ranges'] = body_ranges
-
-        body_exceptions = st.text_input(
-            "Excepciones Sello 2 (páginas a excluir)",
+        cfg.config["body_exceptions"] = st.text_input(
+            "Excepciones Sello 2 (paginas a excluir)",
             value=cfg.get("body_exceptions", ""),
             help="Ej: 3, 5, 10",
-            key="body_exc"
+            key="body_exc",
         )
-        cfg.config['body_exceptions'] = body_exceptions
 
-    # --- GUARDAR CONFIG ---
     cfg.save_config()
 
-
-# --- PREVISUALIZACIÓN ---
 with col_preview:
-    if uploaded_pdf and 'pdf_doc' in st.session_state:
-        st.subheader("👁️ Previsualización")
+    if uploaded_pdf and "pdf_doc" in st.session_state:
+        st.subheader("Previsualizacion")
 
-        # Paginación y Zoom
+        planos_idx = st.session_state.get("planos_idx", [])
+        if planos_idx:
+            plano_options = {
+                f"Plano - pagina {idx + 1}": idx + 1
+                for idx in planos_idx
+            }
+            plano_label = st.selectbox(
+                "Ir a una pagina detectada como plano:",
+                ["-- Seleccionar --"] + list(plano_options.keys()),
+                key="planos_nav_select",
+            )
+            if plano_label != "-- Seleccionar --":
+                selected_page = plano_options[plano_label]
+                if st.session_state.get("page_nav") != selected_page:
+                    st.session_state.page_nav = selected_page
+                    st.rerun()
+
         cp1, cp2, cp3 = st.columns([1, 2, 1])
         with cp1:
             zoom_level = st.selectbox("Zoom", [0.8, 1.0, 1.2, 1.5, 2.0], index=1, key="zoom_select")
         with cp2:
             page_num = st.number_input(
-                "Página:",
+                "Pagina:",
                 min_value=1,
                 max_value=st.session_state.total_pages,
                 value=1,
                 step=1,
-                key="page_nav"
+                key="page_nav",
             )
         with cp3:
-            modo_sello = st.radio(
-                "Posicionar:",
-                ["Sello 1", "Sello 2"],
-                horizontal=True,
-                key="stamp_mode"
-            )
+            modo_sello = st.radio("Posicionar:", ["Sello 1", "Sello 2"], horizontal=True, key="stamp_mode")
 
-        # Renderizar página
         page_idx = page_num - 1
         page_img = st.session_state.pdf_manager.get_page_image(st.session_state.pdf_doc, page_idx, zoom=zoom_level)
+        is_plano = page_idx in st.session_state.get("planos_idx", [])
+        plano_settings = get_plano_settings(cfg, page_idx)
+
+        if is_plano:
+            st.markdown("**Configuracion de este plano**")
+            plano_col1, plano_col2 = st.columns(2)
+            with plano_col1:
+                plano_apply_s1 = st.checkbox(
+                    "Aplicar Sello 1 en este plano",
+                    value=plano_settings["apply_sello1"],
+                    key=f"plano_s1_{page_idx}",
+                )
+            with plano_col2:
+                plano_apply_s2 = st.checkbox(
+                    "Aplicar Sello 2 en este plano",
+                    value=plano_settings["apply_sello2"],
+                    key=f"plano_s2_{page_idx}",
+                )
+
+            if (
+                plano_apply_s1 != plano_settings["apply_sello1"]
+                or plano_apply_s2 != plano_settings["apply_sello2"]
+            ):
+                plano_page_settings = cfg.get("plano_page_settings", {}) or {}
+                current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
+                current_page_settings["apply_sello1"] = plano_apply_s1
+                current_page_settings["apply_sello2"] = plano_apply_s2
+                plano_page_settings[str(page_idx)] = current_page_settings
+                cfg.config["plano_page_settings"] = plano_page_settings
+                cfg.save_config()
+                plano_settings = get_plano_settings(cfg, page_idx)
+                st.rerun()
 
         if page_img:
-            
+            if is_plano:
+                st.warning("Esta pagina fue detectada como **PLANO**. Puedes decidir por separado si aplica Sello 1, Sello 2 y su posicion en esta hoja.")
+            else:
+                st.info(f"Haz clic en la imagen para posicionar el **{modo_sello}**")
 
-            st.info(f"🎯 Haz clic en la imagen para posicionar el **{modo_sello}**")
+            draw_preview = ImageDraw.Draw(page_img)
+            f_coords = None
+            f_color = (88, 166, 255, 60)
 
+            if "1" in modo_sello:
+                if is_plano and plano_settings.get("cover_coords"):
+                    f_coords = plano_settings["cover_coords"]
+                    st.caption("Usando posicion especifica de Sello 1 para esta pagina.")
+                else:
+                    f_coords = cfg.get("cover_coords")
+                f_size = (
+                    624 * 0.35 * (cfg.get("cover_scale", 100) / 100.0),
+                    400 * 0.35 * (cfg.get("cover_scale", 100) / 100.0),
+                )
+            else:
+                if is_plano and plano_settings.get("body_coords"):
+                    f_coords = plano_settings["body_coords"]
+                    st.caption("Usando posicion especifica para esta pagina.")
+                else:
+                    page_custom_coords = cfg.get("page_custom_coords", {})
+                    if str(page_idx) in page_custom_coords:
+                        f_coords = page_custom_coords[str(page_idx)]
+                        st.caption("Usando posicion especifica para esta pagina.")
+                    else:
+                        f_coords = cfg.get("body_coords")
+                f_color = (247, 120, 186, 60)
+                f_size = get_body_preview_size(cfg)
 
-        # --- FOOTPRINT PREVIEW (La Huella) ---
-        from PIL import ImageDraw
-        draw_preview = ImageDraw.Draw(page_img)
-        BASE_FACTOR = 0.35
-        
-        # Determinar coordenadas y tamaño según modo
-        f_coords = None
-        f_size = (0, 0)
-        f_color = (88, 166, 255, 60) # Azul para Sello 1
-        
-        if "1" in modo_sello:
-            f_coords = cfg.get('cover_coords')
-            f_size = (624 * BASE_FACTOR * (cfg.get('cover_scale', 100)/100.0), 400 * BASE_FACTOR * (cfg.get('cover_scale', 100)/100.0))
-        else:
-            f_coords = cfg.get('body_coords')
-            f_color = (247, 120, 186, 60) # Rosa para Sello 2
-            # Sello 2 dimensions from engine
-            if 'signature_bytes' in st.session_state or cfg.get('sello2_mode') == 'custom':
-                tmp_sig_p = None
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as ts:
-                    ts.write(st.session_state.get('signature_bytes', b''))
-                    tmp_sig_p = ts.name
-                
-                try:
-                    sw, sh = st.session_state.stamp_engine.get_body_stamp_size(
-                        tmp_sig_p, cfg.get('engineer_name'), cfg.get('cip_number'), cfg.get('engineer_type')
-                    )
-                    f_size = (sw * BASE_FACTOR * (cfg.get('body_scale', 100)/100.0), sh * BASE_FACTOR * (cfg.get('body_scale', 100)/100.0))
-                finally:
-                    import os
-                    if tmp_sig_p and os.path.exists(tmp_sig_p): os.remove(tmp_sig_p)
-
-        if f_coords:
-            fx, fy = f_coords[0] * zoom_level, f_coords[1] * zoom_level
-            fw, fh = f_size[0] * zoom_level, f_size[1] * zoom_level
-            draw_preview.rectangle([fx, fy, fx + fw, fy + fh], fill=f_color, outline=f_color[:3] + (200,), width=2)
-            st.caption(f"📏 Huella del Sello: {int(f_size[0])}x{int(f_size[1])} px (aprox. {int(f_size[0]*25.4/72)}x{int(f_size[1]*25.4/72)} mm)")
+            if f_coords:
+                fx, fy = f_coords[0] * zoom_level, f_coords[1] * zoom_level
+                fw, fh = f_size[0] * zoom_level, f_size[1] * zoom_level
+                draw_preview.rectangle([fx, fy, fx + fw, fy + fh], fill=f_color, outline=f_color[:3] + (200,), width=2)
+                st.caption(
+                    f"Huella del sello: {int(f_size[0])}x{int(f_size[1])} px "
+                    f"(aprox. {int(f_size[0] * 25.4 / 72)}x{int(f_size[1] * 25.4 / 72)} mm)"
+                )
 
             canvas_result = st_canvas(
                 fill_color="rgba(88, 166, 255, 0.15)",
@@ -485,134 +791,152 @@ with col_preview:
                 width=page_img.size[0],
                 drawing_mode="point",
                 point_display_radius=6,
-                key="canvas_main",
+                key=f"canvas_main_{modo_sello}_{page_num}_{zoom_level}_{st.session_state.canvas_nonce}",
             )
 
             if canvas_result.json_data is not None:
                 objects = canvas_result.json_data.get("objects", [])
-                if len(objects) > 0:
+                if objects:
                     last_point = objects[-1]
                     real_x = last_point["left"] / zoom_level
                     real_y = last_point["top"] / zoom_level
-
                     if "1" in modo_sello:
-                        cfg.config['cover_coords'] = [real_x, real_y]
+                        if is_plano:
+                            plano_page_settings = cfg.get("plano_page_settings", {}) or {}
+                            current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
+                            current_page_settings["cover_coords"] = [real_x, real_y]
+                            current_page_settings.setdefault("apply_sello1", True)
+                            current_page_settings.setdefault("apply_sello2", True)
+                            plano_page_settings[str(page_idx)] = current_page_settings
+                            cfg.config["plano_page_settings"] = plano_page_settings
+                        else:
+                            cfg.config["cover_coords"] = [real_x, real_y]
                     else:
-                        cfg.config['body_coords'] = [real_x, real_y]
+                        if is_plano:
+                            plano_page_settings = cfg.get("plano_page_settings", {}) or {}
+                            current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
+                            current_page_settings["body_coords"] = [real_x, real_y]
+                            current_page_settings.setdefault("apply_sello1", True)
+                            current_page_settings.setdefault("apply_sello2", True)
+                            plano_page_settings[str(page_idx)] = current_page_settings
+                            cfg.config["plano_page_settings"] = plano_page_settings
+                        else:
+                            cfg.config["body_coords"] = [real_x, real_y]
                     cfg.save_config()
+                    st.session_state.canvas_nonce += 1
+                    st.session_state.last_saved_coords = (int(real_x), int(real_y))
+                    st.rerun()
 
-                    st.success(f"📍 Coordenadas guardadas: **X={int(real_x)}, Y={int(real_y)}**")
-
-        # --- BOTÓN DE GENERACIÓN ---
         st.markdown("")
-        if st.button("🚀 Generar PDF Firmado", type="primary", use_container_width=True, key="btn_generate"):
-            if 'signature_bytes' not in st.session_state and cfg.get("sello2_mode") != "custom":
-                st.error("⚠️ Debes subir tu firma digital primero (Sidebar → Firma Digital).")
+        if st.button("Generar PDF Firmado", type="primary", use_container_width=True, key="btn_generate"):
+            if "signature_bytes" not in st.session_state and cfg.get("sello2_mode") != "custom":
+                st.error("Debes subir tu firma digital primero.")
             else:
-                with st.status("⚙️ Procesando PDF...", expanded=True) as status:
-                    import tempfile
-
-                    # Guardar firma temporalmente
+                with st.status("Procesando PDF...", expanded=True) as status:
                     tmp_sig_path = None
-                    if 'signature_bytes' in st.session_state:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_sig:
-                            tmp_sig.write(st.session_state.signature_bytes)
-                            tmp_sig_path = tmp_sig.name
-
                     try:
+                        if "signature_bytes" in st.session_state:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_sig:
+                                tmp_sig.write(st.session_state.signature_bytes)
+                                tmp_sig_path = tmp_sig.name
+
                         base_path = os.path.dirname(os.path.abspath(__file__))
                         tpl_path = os.path.join(base_path, "assets", "plantilla_caratula.png")
-
                         layout_cfg = {
                             "date1": cfg.get("tpl_date1_coords"),
                             "date2": cfg.get("tpl_date2_coords"),
                             "sig": cfg.get("tpl_sig_coords"),
                             "date_scale": cfg.get("tpl_date_scale", 100),
-                            "sig_scale": cfg.get("tpl_sig_scale", 100)
+                            "sig_scale": cfg.get("tpl_sig_scale", 100),
                         }
 
-                        st.write("🔨 Generando sellos...")
+                        st.write("Generando sellos...")
 
-                        # Sello 1 (Carátula)
                         cover_img = None
                         if cfg.get("apply_sello1", True):
                             if not os.path.exists(tpl_path):
-                                st.warning(f"Plantilla de carátula no encontrada en: {tpl_path}")
+                                st.warning(f"Plantilla de caratula no encontrada en: {tpl_path}")
                             else:
                                 cover_img = st.session_state.stamp_engine.generate_cover_stamp(
-                                    tpl_path, tmp_sig_path,
+                                    tpl_path,
+                                    tmp_sig_path,
                                     cfg.get("start_date", ""),
-                                    layout_coords=layout_cfg
+                                    layout_coords=layout_cfg,
                                 )
 
-                        # Sello 2 (Cuerpo)
                         body_img = None
                         if cfg.get("apply_sello2", True):
-                            if cfg.get("sello2_mode") == "custom" and 'custom_stamp_bytes' in st.session_state:
+                            if cfg.get("sello2_mode") == "custom" and "custom_stamp_bytes" in st.session_state:
                                 body_img = Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)).convert("RGBA")
                             elif tmp_sig_path:
                                 body_img = st.session_state.stamp_engine.generate_body_stamp(
                                     tmp_sig_path,
                                     cfg.get("engineer_name", ""),
                                     cfg.get("cip_number", ""),
-                                    cfg.get("engineer_type", "Ingeniero Electricista")
+                                    cfg.get("engineer_type", "Ingeniero Electricista"),
                                 )
 
-                        st.write("📎 Ensamblando documento...")
+                        st.write("Ensamblando documento...")
 
-                        # Recargar PDF fresco
-                        fresh_doc, _ = st.session_state.pdf_manager.load_pdf(io.BytesIO(st.session_state.pdf_bytes))
+                        fresh_doc, _, _ = st.session_state.pdf_manager.load_pdf(io.BytesIO(st.session_state.pdf_bytes))
                         out_buffer = io.BytesIO()
-
                         success, msg = st.session_state.pdf_manager.process_and_save(
-                            fresh_doc, cover_img, body_img,
-                            cfg.config, out_buffer
+                            fresh_doc,
+                            cover_img,
+                            body_img,
+                            cfg.config,
+                            out_buffer,
                         )
 
                         if success:
-                            status.update(label="✅ ¡PDF Generado con éxito!", state="complete")
-                            out_name = os.path.splitext(st.session_state.pdf_name)[0] + "_firmado.pdf"
-
+                            status.update(label="PDF generado con exito", state="complete")
                             st.session_state.pdf_ready_data = out_buffer.getvalue()
-                            st.session_state.pdf_ready_name = out_name
+                            st.session_state.pdf_ready_name = os.path.splitext(st.session_state.pdf_name)[0] + "_firmado.pdf"
                             st.rerun()
                         else:
                             st.error(f"Error: {msg}")
-
                     except Exception as e:
-                        st.error(f"Error crítico: {e}")
+                        st.error(f"Error critico: {e}")
                     finally:
                         if tmp_sig_path and os.path.exists(tmp_sig_path):
                             os.remove(tmp_sig_path)
-
     else:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="glass-card" style="text-align:center; padding: 4rem 2rem;">
-            <h2 style="color: #58a6ff !important;">📄 Sube un PDF para comenzar</h2>
+            <h2 style="color: #58a6ff !important;">Sube un PDF para comenzar</h2>
             <p style="color: #8b949e; font-size: 1.1rem;">
                 Arrastra o selecciona tu documento en el panel izquierdo.<br>
                 Luego posiciona tus sellos con un clic.
             </p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
+if st.session_state.pdf_ready_data:
+    st.divider()
+    st.success(f"Documento listo: {st.session_state.pdf_ready_name}")
+    st.download_button(
+        label="Descargar PDF Firmado",
+        data=st.session_state.pdf_ready_data,
+        file_name=st.session_state.pdf_ready_name,
+        mime="application/pdf",
+        key="persistent_download_btn",
+        use_container_width=True,
+    )
+    if st.button("Limpiar Generacion", key="btn_clear_pdf"):
+        st.session_state.pdf_ready_data = None
+        st.session_state.pdf_ready_name = ""
+        st.rerun()
 
+if "last_saved_coords" in st.session_state:
+    x, y = st.session_state.last_saved_coords
+    st.success(f"Coordenadas guardadas: **X={x}, Y={y}**")
+    del st.session_state.last_saved_coords
 
-        # --- BOTÓN DE DESCARGA PERSISTENTE ---
-        if st.session_state.pdf_ready_data:
-            st.divider()
-            st.success(f"✅ Documento listo: {st.session_state.pdf_ready_name}")
-            st.download_button(
-                label="⬇️ Descargar PDF Firmado",
-                data=st.session_state.pdf_ready_data,
-                file_name=st.session_state.pdf_ready_name,
-                mime="application/pdf",
-                key="persistent_download_btn",
-                use_container_width=True
-            )
-            if st.button("🗑️ Limpiar Generación", key="btn_clear_pdf"):
-                st.session_state.pdf_ready_data = None
-                st.rerun()
+st.markdown(
+    '<div class="footer-text">(c) L.Navarrete · Sistema de Aprobacion de Factibilidad · Powered by Streamlit</div>',
+    unsafe_allow_html=True,
+)
 
-# --- FOOTER ---
-st.markdown('<div class="footer-text">© L.Navarrete · Sistema de Aprobación de Factibilidad · Powered by Streamlit</div>', unsafe_allow_html=True)

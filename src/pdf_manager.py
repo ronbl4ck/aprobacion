@@ -9,7 +9,7 @@ class PDFManager:
 
     def load_pdf(self, pdf_input):
         """
-        Carga el PDF y devuelve el objeto documento y el número de páginas.
+        Carga el PDF y devuelve el objeto documento, el número de páginas y la lista de índices de planos.
         Soporta ruta (str) o stream (BytesIO).
         """
         try:
@@ -18,10 +18,19 @@ class PDFManager:
             else:
                 # Caso Stream (Streamlit)
                 doc = fitz.open(stream=pdf_input, filetype="pdf")
-            return doc, len(doc)
+                
+            planos_idx = []
+            for i in range(len(doc)):
+                w = doc[i].rect.width
+                h = doc[i].rect.height
+                # A4 = 595 x 842. Plano if width > 600 or width > height (Landscape)
+                if w > 600 or w > h:
+                    planos_idx.append(i)
+                    
+            return doc, len(doc), planos_idx
         except Exception as e:
             print(f"Error cargando PDF: {e}")
-            return None, 0
+            return None, 0, []
 
     def get_page_image(self, doc, page_num, zoom=1.0):
         """
@@ -63,22 +72,32 @@ class PDFManager:
         body_ranges = config_data.get('body_ranges', [])
         cover_ranges = config_data.get('cover_ranges', [{'start': '1', 'end': '1'}])
         
-        cover_scale = int(config_data.get('cover_scale', 100))
-        body_scale = int(config_data.get('body_scale', 100))
+        cover_scale = int(config_data.get('cover_scale', 100) or 100)
+        body_scale = int(config_data.get('body_scale', 100) or 100)
 
-        body_exceptions_str = config_data.get('body_exceptions', "")
+        body_exceptions_str = config_data.get('body_exceptions', "") or ""
         exceptions = []
         if body_exceptions_str:
             for x in body_exceptions_str.split(','):
-                exceptions.append(int(x.strip()) - 1)
+                x = x.strip()
+                if x.isdigit():
+                    exceptions.append(int(x) - 1)
 
         def is_in_ranges(page_idx, ranges_list):
             if not ranges_list:
                 return False
             for rng in ranges_list:
-                start = int(rng.get('start', 1)) - 1
-                end_str = str(rng.get('end', 'final')).lower()
-                if end_str == 'final' or not end_str.isdigit():
+                start_val = rng.get('start')
+                end_val = rng.get('end')
+                # Skip incomplete rows (e.g. from st.data_editor adding empty rows)
+                if start_val is None or str(start_val).strip() == '':
+                    continue
+                try:
+                    start = int(start_val) - 1
+                except (ValueError, TypeError):
+                    continue
+                end_str = str(end_val or 'final').strip().lower()
+                if end_str == 'final' or end_str == '' or end_str == 'none' or not end_str.isdigit():
                     end = total_pages - 1
                 else:
                     end = int(end_str) - 1
@@ -90,19 +109,39 @@ class PDFManager:
         try:
             for i in range(total_pages):
                 page = doc[i]
+                plano_page_settings = config_data.get('plano_page_settings', {}) or {}
+                page_settings = plano_page_settings.get(str(i), {}) or {}
 
-                if cover_bytes is not None and is_in_ranges(i, cover_ranges):
+                apply_cover_here = is_in_ranges(i, cover_ranges)
+                if 'apply_sello1' in page_settings:
+                    apply_cover_here = bool(page_settings.get('apply_sello1'))
+
+                apply_body_here = is_in_ranges(i, body_ranges) and i not in exceptions
+                if 'apply_sello2' in page_settings:
+                    apply_body_here = bool(page_settings.get('apply_sello2'))
+
+                if cover_bytes is not None and apply_cover_here:
                     BASE_FACTOR = 0.35
-                    x, y = config_data.get('cover_coords', (0, 0))
+                    if page_settings.get('cover_coords'):
+                        x, y = page_settings.get('cover_coords')
+                    else:
+                        x, y = config_data.get('cover_coords') or (0, 0)
                     orig_w, orig_h = cover_img.size
                     w = int(orig_w * BASE_FACTOR * (cover_scale / 100.0))
                     h = int(orig_h * BASE_FACTOR * (cover_scale / 100.0))
                     rect = fitz.Rect(x, y, x + w, y + h)
                     page.insert_image(rect, stream=cover_bytes, keep_proportion=True)
 
-                if body_bytes is not None and is_in_ranges(i, body_ranges) and i not in exceptions:
+                if body_bytes is not None and apply_body_here:
                     BASE_FACTOR = 0.35
-                    x, y = config_data.get('body_coords', (0, 0))
+                    if page_settings.get('body_coords'):
+                        x, y = page_settings.get('body_coords')
+                    else:
+                        page_custom_coords = config_data.get('page_custom_coords', {})
+                        if str(i) in page_custom_coords:
+                            x, y = page_custom_coords[str(i)]
+                        else:
+                            x, y = config_data.get('body_coords') or (0, 0)
                     orig_w, orig_h = body_img.size
                     w = int(orig_w * BASE_FACTOR * (body_scale / 100.0))
                     h = int(orig_h * BASE_FACTOR * (body_scale / 100.0))

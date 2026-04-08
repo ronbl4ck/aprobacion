@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+venv/
+.venv/
+
+python-3.13/
+python313/
+python-3.13*.zip
+
+SistemaAprobacion.exe_extracted/
+disassembled_src/
+
+*.dis
+*_failed

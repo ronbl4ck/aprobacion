@@ -3,32 +3,47 @@
     "engineer_name": "Luis Navarrete ",
     "cip_number": "72391902",
     "cover_coords": [
-        77.0,
-        659.0
+        46.0,
+        627.0
     ],
     "body_coords": [
-        458.0,
-        667.0
+        271.0,
+        625.0
     ],
     "cover_page": 1,
     "body_page_start": 2,
     "body_page_end": "",
-    "start_date": "06/04/2026",
+    "start_date": "07/04/2026",
     "template_path": "C:\\Users\\P723919021\\Documents\\vscode\\APROBACION\\assets/plantilla_caratula.png",
     "cover_scale": 54,
     "body_scale": 100,
-    "tpl_date1_coords": null,
-    "tpl_date2_coords": null,
-    "tpl_sig_coords": null,
+    "tpl_date1_coords": [
+        343,
+        212
+    ],
+    "tpl_date2_coords": [
+        343,
+        276
+    ],
+    "tpl_sig_coords": [
+        62,
+        280,
+        280,
+        354
+    ],
     "tpl_date_scale": 100,
     "tpl_sig_scale": 100,
-    "sello2_mode": "custom",
+    "sello2_mode": "generate",
     "apply_sello1": true,
     "apply_sello2": true,
     "cover_ranges": [
         {
             "start": "1",
             "end": "1"
+        },
+        {
+            "start": null,
+            "end": null
         }
     ],
     "body_ranges": [
@@ -39,5 +54,6 @@
     ],
     "body_exceptions": "",
     "clean_bg": true,
-    "bg_threshold": 249
+    "bg_threshold": 249,
+    "engineer_type": "Ingeniero Electricista"
 }
