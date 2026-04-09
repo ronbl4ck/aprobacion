@@ -36,26 +36,29 @@ except Exception:
 from streamlit_drawable_canvas import st_canvas
 
 
+import numpy as np
+
 def process_transparency(img_bytes, threshold=240, clean=False):
     if not clean:
         return img_bytes
 
     img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-    new_data = []
-    for item in img.getdata():
-        if item[0] >= threshold and item[1] >= threshold and item[2] >= threshold:
-            new_data.append((255, 255, 255, 0))
-        else:
-            avg = (item[0] + item[1] + item[2]) / 3
-            if avg > threshold - 30:
-                alpha = int(255 * ((threshold - avg) / 30))
-                new_data.append((item[0], item[1], item[2], max(0, alpha)))
-            else:
-                new_data.append(item)
-
-    img.putdata(new_data)
+    data = np.array(img)
+    
+    r, g, b, a = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
+    
+    avg = (r.astype(int) + g.astype(int) + b.astype(int)) / 3.0
+    
+    mask_white = (r >= threshold) & (g >= threshold) & (b >= threshold)
+    data[mask_white, 3] = 0
+    
+    mask_soft = (~mask_white) & (avg > threshold - 30)
+    alpha_vals = 255 * ((threshold - avg[mask_soft]) / 30.0)
+    data[mask_soft, 3] = np.maximum(0, alpha_vals).astype(np.uint8)
+    
+    new_img = Image.fromarray(data, "RGBA")
     out = io.BytesIO()
-    img.save(out, format="PNG")
+    new_img.save(out, format="PNG")
     return out.getvalue()
 
 
@@ -347,7 +350,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_container_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_column_width=True)
         else:
             st.info("Este perfil no tiene firma pura subida.")
 
@@ -357,7 +360,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_container_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_column_width=True)
 
         st.divider()
 
@@ -410,7 +413,7 @@ if not st.session_state.active_profile:
             sel_prof = st.selectbox("Seleccionar Perfil", ["-- Seleccionar --"] + profile_names, key="sel_prof_login")
             if sel_prof != "-- Seleccionar --":
                 pin_input = st.text_input("PIN (6 digitos)", type="password", key="pin_login")
-                if st.button("Ingresar", key="btn_login", type="primary", use_container_width=True):
+                if st.button("Ingresar", key="btn_login", type="primary"):
                     auth_data = prof_mgr.authenticate(sel_prof, pin_input)
                     if auth_data:
                         st.session_state.active_profile = auth_data["name"]
@@ -547,7 +550,7 @@ if not st.session_state.active_profile:
             else:
                 st.error("No se encontro assets/plantilla_caratula.png")
 
-        if st.button("Crear y Guardar Perfil", key="btn_save_prof", type="primary", use_container_width=True):
+        if st.button("Crear y Guardar Perfil", key="btn_save_prof", type="primary"):
             if not new_prof_name or not new_prof_pin or len(new_prof_pin) < 4:
                 st.error("Nombre y PIN valido (min 4 digitos) requeridos.")
             else:
@@ -804,7 +807,7 @@ with col_preview:
                     st.rerun()
 
         st.markdown("")
-        if st.button("Generar PDF Firmado", type="primary", use_container_width=True, key="btn_generate"):
+        if st.button("Generar PDF Firmado", type="primary", key="btn_generate"):
             if "signature_bytes" not in st.session_state and cfg.get("sello2_mode") != "custom":
                 st.error("Debes subir tu firma digital primero.")
             else:
@@ -898,8 +901,7 @@ if st.session_state.pdf_ready_data:
         data=st.session_state.pdf_ready_data,
         file_name=st.session_state.pdf_ready_name,
         mime="application/pdf",
-        key="persistent_download_btn",
-        use_container_width=True,
+        key="persistent_download_btn"
     )
     if st.button("Limpiar Generacion", key="btn_clear_pdf"):
         st.session_state.pdf_ready_data = None
