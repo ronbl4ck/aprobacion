@@ -19,6 +19,23 @@ try:
     _real_image_to_url = image_utils.image_to_url
 
     def wrapped_image_to_url(image_data, layout_config, *args, **kwargs):
+        # Solución Definitiva para Nube: Convertir la imagen directamente a Base64
+        # Esto evita por completo el enrutador de media de Streamlit que a veces da URLs inaccesibles ("hojas en blanco")
+        try:
+            import base64
+            import numpy as np
+            
+            if isinstance(image_data, Image.Image):
+                img = image_data
+            elif isinstance(image_data, np.ndarray):
+                img = Image.fromarray(image_data)
+            else:
+                img = Image.open(io.BytesIO(image_data))
+        # OPTIMIZACION DE MEMORIA: Forzar JPEG para los dibujos del st_canvas (evita el error de hoja en blanco por WebSocket = 2MB limit)
+        new_args = list(args)
+        if len(new_args) >= 3 and new_args[2] == "PNG":
+            new_args[2] = "JPEG"
+            
         # Si envian un numero (int) en vez de un objeto config, lo envolvemos
         if isinstance(layout_config, int):
             from dataclasses import dataclass
@@ -27,8 +44,8 @@ try:
                 width: int
                 use_column_width: bool = False
                 use_container_width: bool = False
-            return _real_image_to_url(image_data, FakeConfig(width=layout_config), *args, **kwargs)
-        return _real_image_to_url(image_data, layout_config, *args, **kwargs)
+            return _real_image_to_url(image_data, FakeConfig(width=layout_config), *new_args, **kwargs)
+        return _real_image_to_url(image_data, layout_config, *new_args, **kwargs)
 
     sei.image_to_url = wrapped_image_to_url
 except Exception:
