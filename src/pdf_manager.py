@@ -20,13 +20,6 @@ class PDFManager:
                 doc = fitz.open(stream=pdf_input, filetype="pdf")
                 
             planos_idx = []
-            for i in range(len(doc)):
-                w = doc[i].rect.width
-                h = doc[i].rect.height
-                # A4 = 595 x 842. Plano if width > 600 or width > height (Landscape)
-                if w > 600 or w > h:
-                    planos_idx.append(i)
-                    
             return doc, len(doc), planos_idx
         except Exception as e:
             print(f"Error cargando PDF: {e}")
@@ -127,8 +120,11 @@ class PDFManager:
                     else:
                         x, y = config_data.get('cover_coords') or (0, 0)
                     orig_w, orig_h = cover_img.size
-                    w = int(orig_w * BASE_FACTOR * (cover_scale / 100.0))
-                    h = int(orig_h * BASE_FACTOR * (cover_scale / 100.0))
+                    current_cover_scale = cover_scale
+                    if 'page_scale' in page_settings:
+                        current_cover_scale = int(page_settings.get('page_scale', cover_scale))
+                    w = int(orig_w * BASE_FACTOR * (current_cover_scale / 100.0))
+                    h = int(orig_h * BASE_FACTOR * (current_cover_scale / 100.0))
                     rect = fitz.Rect(x, y, x + w, y + h)
                     page.insert_image(rect, stream=cover_bytes, keep_proportion=True)
 

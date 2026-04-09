@@ -1,4 +1,4 @@
-﻿import datetime
+import datetime
 import io
 import os
 import tempfile
@@ -93,15 +93,6 @@ def get_body_preview_size(cfg):
             os.remove(tmp_sig_path)
 
 
-def get_plano_settings(cfg, page_idx):
-    plano_settings = cfg.get("plano_page_settings", {}) or {}
-    page_settings = plano_settings.get(str(page_idx), {}) or {}
-    return {
-        "apply_sello1": page_settings.get("apply_sello1", True),
-        "apply_sello2": page_settings.get("apply_sello2", True),
-        "cover_coords": page_settings.get("cover_coords"),
-        "body_coords": page_settings.get("body_coords"),
-    }
 
 
 st.set_page_config(
@@ -589,16 +580,18 @@ with col_config:
             st.session_state.pdf_bytes = uploaded_pdf.read()
             st.session_state.pdf_name = uploaded_pdf.name
             pdf_doc, total_pages, planos_idx = st.session_state.pdf_manager.load_pdf(io.BytesIO(st.session_state.pdf_bytes))
+            # REINICIAR RANGOS POR DEFECTO AL CARGAR NUEVO ARCHIVO
+            cfg.config["cover_ranges"] = [{"start": "1", "end": "1"}]
+            cfg.config["body_ranges"] = [{"start": "2", "end": "final"}]
+            cfg.config["plano_page_settings"] = {}
+            cfg.config["page_custom_coords"] = {}
+            cfg.save_config()
+
             st.session_state.pdf_doc = pdf_doc
             st.session_state.total_pages = total_pages
             st.session_state.planos_idx = planos_idx
             st.rerun()
 
-        st.success(f"Archivo: **{st.session_state.pdf_name}** - {st.session_state.total_pages} paginas")
-        if st.session_state.get("planos_idx"):
-            total_planos = len(st.session_state.planos_idx)
-            sufijo = "pagina" if total_planos == 1 else "paginas"
-            st.warning(f"Se detectaron **{total_planos}** {sufijo} con formato de plano. Podras ubicarlas independientemente.")
     st.markdown("</div>", unsafe_allow_html=True)
 
     with st.expander("Fecha del Sello 1", expanded=True):
@@ -671,33 +664,17 @@ with col_preview:
     if uploaded_pdf and "pdf_doc" in st.session_state:
         st.subheader("Previsualizacion")
 
-        planos_idx = st.session_state.get("planos_idx", [])
-        if planos_idx:
-            plano_options = {
-                f"Plano - pagina {idx + 1}": idx + 1
-                for idx in planos_idx
-            }
-            plano_label = st.selectbox(
-                "Ir a una pagina detectada como plano:",
-                ["-- Seleccionar --"] + list(plano_options.keys()),
-                key="planos_nav_select",
-            )
-            if plano_label != "-- Seleccionar --":
-                selected_page = plano_options[plano_label]
-                if st.session_state.get("page_nav") != selected_page:
-                    st.session_state.page_nav = selected_page
-                    st.rerun()
-
         cp1, cp2, cp3 = st.columns([1, 2, 1])
         with cp1:
-            zoom_level = st.selectbox("Zoom", [0.8, 1.0, 1.2, 1.5, 2.0], index=1, key="zoom_select")
+            zoom_level = st.selectbox("Zoom", [0.5, 0.8, 1.0, 1.2, 1.5, 2.0], index=2, key="zoom_select")
         with cp2:
             page_num = st.number_input(
-                "Pagina:",
+                "Navegador de paginas:",
                 min_value=1,
                 max_value=st.session_state.total_pages,
                 value=1,
                 step=1,
+                help="Escribe el numero y presiona Enter para saltar directamente.",
                 key="page_nav",
             )
         with cp3:
@@ -705,42 +682,43 @@ with col_preview:
 
         page_idx = page_num - 1
         page_img = st.session_state.pdf_manager.get_page_image(st.session_state.pdf_doc, page_idx, zoom=zoom_level)
-        is_plano = page_idx in st.session_state.get("planos_idx", [])
-        plano_settings = get_plano_settings(cfg, page_idx)
+        
+        plano_page_settings = cfg.get("plano_page_settings", {}) or {}
+        current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
+        is_plano = bool(current_page_settings.get("is_plano", False))
 
-        if is_plano:
-            st.markdown("**Configuracion de este plano**")
-            plano_col1, plano_col2 = st.columns(2)
-            with plano_col1:
-                plano_apply_s1 = st.checkbox(
-                    "Aplicar Sello 1 en este plano",
-                    value=plano_settings["apply_sello1"],
-                    key=f"plano_s1_{page_idx}",
-                )
-            with plano_col2:
-                plano_apply_s2 = st.checkbox(
-                    "Aplicar Sello 2 en este plano",
-                    value=plano_settings["apply_sello2"],
-                    key=f"plano_s2_{page_idx}",
-                )
-
-            if (
-                plano_apply_s1 != plano_settings["apply_sello1"]
-                or plano_apply_s2 != plano_settings["apply_sello2"]
-            ):
-                plano_page_settings = cfg.get("plano_page_settings", {}) or {}
-                current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
-                current_page_settings["apply_sello1"] = plano_apply_s1
-                current_page_settings["apply_sello2"] = plano_apply_s2
-                plano_page_settings[str(page_idx)] = current_page_settings
-                cfg.config["plano_page_settings"] = plano_page_settings
-                cfg.save_config()
-                plano_settings = get_plano_settings(cfg, page_idx)
-                st.rerun()
+        st.markdown("**Ajustes de la pagina actual**")
+        plano_col1, plano_col2 = st.columns(2)
+        with plano_col1:
+            ui_is_plano = st.checkbox(
+                "Tratar esta pagina como Plano",
+                value=is_plano,
+                key=f"plano_chk_{page_idx}",
+                help="El Sello Plano usara la imagen de Sello 1, pero anulara el Sello 2 (Cuerpo) en esta pagina.",
+            )
+        with plano_col2:
+            ui_page_scale = st.slider(
+                "Escala de Sello Plano (%)",
+                10, 200, 
+                int(current_page_settings.get("page_scale", cfg.get("cover_scale", 100))),
+                disabled=not ui_is_plano,
+                key=f"plano_scale_{page_idx}"
+            )
+            
+        if ui_is_plano != is_plano or (ui_is_plano and ui_page_scale != current_page_settings.get("page_scale")):
+            current_page_settings["is_plano"] = ui_is_plano
+            if ui_is_plano:
+                current_page_settings["page_scale"] = ui_page_scale
+                current_page_settings["apply_sello2"] = False
+                current_page_settings["apply_sello1"] = True
+            plano_page_settings[str(page_idx)] = current_page_settings
+            cfg.config["plano_page_settings"] = plano_page_settings
+            cfg.save_config()
+            st.rerun()
 
         if page_img:
             if is_plano:
-                st.warning("Esta pagina fue detectada como **PLANO**. Puedes decidir por separado si aplica Sello 1, Sello 2 y su posicion en esta hoja.")
+                st.warning("Esta pagina esta marcada como **PLANO**. El Sello 2 ha sido omitido.")
             else:
                 st.info(f"Haz clic en la imagen para posicionar el **{modo_sello}**")
 
@@ -749,18 +727,20 @@ with col_preview:
             f_color = (88, 166, 255, 60)
 
             if "1" in modo_sello:
-                if is_plano and plano_settings.get("cover_coords"):
-                    f_coords = plano_settings["cover_coords"]
-                    st.caption("Usando posicion especifica de Sello 1 para esta pagina.")
+                if is_plano and current_page_settings.get("cover_coords"):
+                    f_coords = current_page_settings["cover_coords"]
+                    st.caption("Usando posicion especifica del Sello Plano para esta pagina.")
                 else:
                     f_coords = cfg.get("cover_coords")
+                
+                c_scale = current_page_settings.get("page_scale", cfg.get("cover_scale", 100)) if is_plano else cfg.get("cover_scale", 100)
                 f_size = (
-                    624 * 0.35 * (cfg.get("cover_scale", 100) / 100.0),
-                    400 * 0.35 * (cfg.get("cover_scale", 100) / 100.0),
+                    624 * 0.35 * (c_scale / 100.0),
+                    400 * 0.35 * (c_scale / 100.0),
                 )
             else:
-                if is_plano and plano_settings.get("body_coords"):
-                    f_coords = plano_settings["body_coords"]
+                if is_plano and current_page_settings.get("body_coords"):
+                    f_coords = current_page_settings["body_coords"]
                     st.caption("Usando posicion especifica para esta pagina.")
                 else:
                     page_custom_coords = cfg.get("page_custom_coords", {})
@@ -805,8 +785,6 @@ with col_preview:
                             plano_page_settings = cfg.get("plano_page_settings", {}) or {}
                             current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
                             current_page_settings["cover_coords"] = [real_x, real_y]
-                            current_page_settings.setdefault("apply_sello1", True)
-                            current_page_settings.setdefault("apply_sello2", True)
                             plano_page_settings[str(page_idx)] = current_page_settings
                             cfg.config["plano_page_settings"] = plano_page_settings
                         else:
@@ -816,8 +794,6 @@ with col_preview:
                             plano_page_settings = cfg.get("plano_page_settings", {}) or {}
                             current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
                             current_page_settings["body_coords"] = [real_x, real_y]
-                            current_page_settings.setdefault("apply_sello1", True)
-                            current_page_settings.setdefault("apply_sello2", True)
                             plano_page_settings[str(page_idx)] = current_page_settings
                             cfg.config["plano_page_settings"] = plano_page_settings
                         else:
