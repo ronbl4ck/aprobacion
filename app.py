@@ -684,7 +684,20 @@ with col_preview:
             modo_sello = st.radio("Posicionar:", ["Sello 1", "Sello 2"], horizontal=True, key="stamp_mode")
 
         page_idx = page_num - 1
-        page_img = st.session_state.pdf_manager.get_page_image(st.session_state.pdf_doc, page_idx, zoom=zoom_level)
+        raw_page_img = st.session_state.pdf_manager.get_page_image(st.session_state.pdf_doc, page_idx, zoom=zoom_level)
+        
+        # --- PREVENCION DE HOJAS EN BLANCO (LIMITADOR DE MEMORIA EN CANVAS) ---
+        MAX_CANVAS_DIM = 900
+        render_scale = 1.0
+        page_img = raw_page_img
+        if raw_page_img:
+            if raw_page_img.size[0] > MAX_CANVAS_DIM or raw_page_img.size[1] > MAX_CANVAS_DIM:
+                ratio_w = MAX_CANVAS_DIM / float(raw_page_img.size[0])
+                ratio_h = MAX_CANVAS_DIM / float(raw_page_img.size[1])
+                render_scale = min(ratio_w, ratio_h)
+                new_w = int(raw_page_img.size[0] * render_scale)
+                new_h = int(raw_page_img.size[1] * render_scale)
+                page_img = raw_page_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
         
         plano_page_settings = cfg.get("plano_page_settings", {}) or {}
         current_page_settings = plano_page_settings.get(str(page_idx), {}) or {}
@@ -756,8 +769,8 @@ with col_preview:
                 f_size = get_body_preview_size(cfg)
 
             if f_coords:
-                fx, fy = f_coords[0] * zoom_level, f_coords[1] * zoom_level
-                fw, fh = f_size[0] * zoom_level, f_size[1] * zoom_level
+                fx, fy = (f_coords[0] * zoom_level) * render_scale, (f_coords[1] * zoom_level) * render_scale
+                fw, fh = (f_size[0] * zoom_level) * render_scale, (f_size[1] * zoom_level) * render_scale
                 draw_preview.rectangle([fx, fy, fx + fw, fy + fh], fill=f_color, outline=f_color[:3] + (200,), width=2)
                 st.caption(
                     f"Huella del sello: {int(f_size[0])}x{int(f_size[1])} px "
@@ -781,8 +794,8 @@ with col_preview:
                 objects = canvas_result.json_data.get("objects", [])
                 if objects:
                     last_point = objects[-1]
-                    real_x = last_point["left"] / zoom_level
-                    real_y = last_point["top"] / zoom_level
+                    real_x = (last_point["left"] / render_scale) / zoom_level
+                    real_y = (last_point["top"] / render_scale) / zoom_level
                     if "1" in modo_sello:
                         if is_plano:
                             plano_page_settings = cfg.get("plano_page_settings", {}) or {}

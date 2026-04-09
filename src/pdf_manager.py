@@ -34,7 +34,7 @@ class PDFManager:
         try:
             page = doc[page_num]
             mat = fitz.Matrix(zoom, zoom)
-            pix = page.get_pixmap(matrix=mat)
+            pix = page.get_pixmap(matrix=mat, colorspace=fitz.csRGB, alpha=False)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             return img
         except Exception as e:
