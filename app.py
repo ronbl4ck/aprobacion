@@ -19,13 +19,14 @@ try:
     _real_image_to_url = image_utils.image_to_url
 
     def wrapped_image_to_url(image_data, layout_config, *args, **kwargs):
-        # Si envían un numero (int) en vez de un objeto config, lo envolvemos
+        # Si envian un numero (int) en vez de un objeto config, lo envolvemos
         if isinstance(layout_config, int):
             from dataclasses import dataclass
             @dataclass
             class FakeConfig:
                 width: int
                 use_column_width: bool = False
+                use_container_width: bool = False
             return _real_image_to_url(image_data, FakeConfig(width=layout_config), *args, **kwargs)
         return _real_image_to_url(image_data, layout_config, *args, **kwargs)
 
@@ -350,7 +351,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_container_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", width="stretch")
         else:
             st.info("Este perfil no tiene firma pura subida.")
 
@@ -360,7 +361,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_container_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", width="stretch")
 
         st.divider()
 
@@ -697,7 +698,12 @@ with col_preview:
         page_idx = page_num - 1
         raw_page_img = st.session_state.pdf_manager.get_page_image(st.session_state.pdf_doc, page_idx, zoom=zoom_level)
         
-        # --- PREVENCION DE HOJAS EN BLANCO (LIMITADOR DE MEMORIA EN CANVAS) ---
+        # --- PREVENCION DE HOJAS EN BLANCO (DIAGNOSTICO Y LIMITADOR DE MEMORIA) ---
+        if raw_page_img is None:
+            st.error(f"Error critico: PyMuPDF devolvio una imagen nula para la pagina {page_idx+1}.")
+        else:
+            print(f"[DEBUG RENDERING] Pagina {page_idx+1} | Zoom: {zoom_level} | Formato orig: {raw_page_img.mode} | Tamano orig: {raw_page_img.size}")
+            
         MAX_CANVAS_DIM = 900
         render_scale = 1.0
         page_img = raw_page_img

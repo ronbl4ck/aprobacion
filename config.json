@@ -3,12 +3,12 @@
     "engineer_name": "CARLOS ARPI RONDAN",
     "cip_number": "244941",
     "cover_coords": [
-        95.0,
-        218.0
+        101.0,
+        559.0
     ],
     "body_coords": [
-        470.0,
-        625.0
+        416.0,
+        325.0
     ],
     "cover_page": 1,
     "body_page_start": 2,
@@ -54,23 +54,13 @@
     "plano_page_settings": {
         "74": {
             "is_plano": true,
-            "page_scale": 99,
-            "apply_sello2": false,
-            "apply_sello1": true,
-            "body_coords": [
-                1123.128888888889,
-                810.5600000000001
-            ],
-            "cover_coords": [
-                1136.3733333333334,
-                823.8044444444445
-            ]
-        },
-        "75": {
-            "is_plano": true,
             "page_scale": 72,
             "apply_sello2": false,
-            "apply_sello1": true
+            "apply_sello1": true,
+            "cover_coords": [
+                1168.16,
+                876.7822222222222
+            ]
         }
     }
 }
