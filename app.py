@@ -12,20 +12,20 @@ from src.pdf_manager import PDFManager
 from src.stamp_engine import StampEngine
 from src.profile_manager import ProfileManager
 
+
+# PARCHE DE COMPATIBILIDAD PARA VERSIONES NUEVAS DE STREAMLIT
 try:
     from streamlit.elements.lib import image_utils
-
     _real_image_to_url = image_utils.image_to_url
 
     def wrapped_image_to_url(image_data, layout_config, *args, **kwargs):
+        # Si envían un numero (int) en vez de un objeto config, lo envolvemos
         if isinstance(layout_config, int):
             from dataclasses import dataclass
-
             @dataclass
             class FakeConfig:
                 width: int
                 use_column_width: bool = False
-
             return _real_image_to_url(image_data, FakeConfig(width=layout_config), *args, **kwargs)
         return _real_image_to_url(image_data, layout_config, *args, **kwargs)
 
@@ -350,7 +350,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_column_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.signature_bytes)), caption="Firma actual procesada", use_container_width=True)
         else:
             st.info("Este perfil no tiene firma pura subida.")
 
@@ -360,7 +360,7 @@ with st.sidebar:
                 threshold=bg_threshold,
                 clean=clean_bg,
             )
-            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_column_width=True)
+            st.image(Image.open(io.BytesIO(st.session_state.custom_stamp_bytes)), caption="Sello Completo procesado", use_container_width=True)
 
         st.divider()
 
@@ -453,6 +453,12 @@ if not st.session_state.active_profile:
             new_prof_custom = None
             if "Completo" in s_mode:
                 new_prof_custom = st.file_uploader("Imagen Sello Completo", type=["png", "jpg", "jpeg"], key="new_prof_custom")
+            
+            st.markdown("**Procesamiento de imagen**")
+            rg_clean_bg = st.checkbox("Procesar transparencia permanentemente (Quitar fondo blanco)", value=True, help="Guardara las firmas en formato transparente para asegurar el mejor rendimiento del visor.")
+            rg_bg_threshold = 240
+            if rg_clean_bg:
+                rg_bg_threshold = st.slider("Sensibilidad del blanco (Filtro inicial)", 150, 255, 240, key="rg_bg_slider")
                 
         with col_rg2:
             st.markdown("**Editor de Layout (Caratula Sello 1)**")
@@ -555,7 +561,12 @@ if not st.session_state.active_profile:
                 st.error("Nombre y PIN valido (min 4 digitos) requeridos.")
             else:
                 sig_bytes = new_prof_sig.read() if new_prof_sig else None
+                if sig_bytes and rg_clean_bg:
+                    sig_bytes = process_transparency(sig_bytes, threshold=rg_bg_threshold, clean=True)
+
                 c_bytes = new_prof_custom.read() if new_prof_custom else None
+                if c_bytes and rg_clean_bg:
+                    c_bytes = process_transparency(c_bytes, threshold=rg_bg_threshold, clean=True)
                 s2_val = "custom" if "Completo" in s_mode else "generate"
                 
                 tpl_coords = st.session_state.get("rg_tpl_coords")
